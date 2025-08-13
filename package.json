@@ -1,0 +1,12 @@
+{
+  "name": "tcg-battle-netlify-functions",
+  "version": "1.0.0",
+  "description": "Dependencies for Netlify functions",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Building functions...'"
+  },
+  "dependencies": {
+    "pusher": "^5.2.0"
+  }
+}

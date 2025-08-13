@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCG Battle!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- 
+      Pusher is used for real-time communication between players.
+      It allows the app to work without a traditional backend or database.
+      You can get a free API key from https://pusher.com/
+    -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-bangers { font-family: 'Bangers', cursive; }
+        .logo-text { text-shadow: 4px 4px 0px #1f2937, -2px -2px 0 #1f2937, 2px -2px 0 #1f2937, -2px 2px 0 #1f2937, 2px 2px 0 #1f2937; }
+        .disabled-card { filter: grayscale(100%); cursor: not-allowed; }
+        .prize-card { transition: all 0.3s ease; border: 2px solid #6b7280; }
+        .prize-card.taken { background-color: #4b5563 !important; color: #9ca3af !important; transform: scale(0.95); border-color: #374151; }
+        .turn-indicator-glow { box-shadow: 0 0 25px 8px #22c55e; animation: pulse-green 2s infinite; }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 25px 8px #22c55e; } 70% { box-shadow: 0 0 35px 12px #16a34a; } 100% { box-shadow: 0 0 25px 8px #22c55e; } }
+        .modal-backdrop { background-color: rgba(0,0,0,0.75); }
+
+        /* New Presenter Styles */
+        .presenter-prize-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+        .presenter-prize-card {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin: -24px; /* Half of width/height */
+            width: 48px;
+            height: 48px;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-gray-100">
+
+    <div id="app" class="relative min-h-screen">
+
+        <!-- Home View -->
+        <section id="home-view" class="hidden min-h-screen flex flex-col items-center justify-center p-4 text-center">
+            <div class="mb-8">
+                <h1 class="text-7xl sm:text-8xl md:text-9xl font-bangers text-yellow-400 logo-text tracking-wider">TCG BATTLE!</h1>
+            </div>
+            <div class="space-y-4 w-full max-w-xs">
+                <button id="create-session-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105">Create a new battle</button>
+                <button id="join-session-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105">Join an existing battle</button>
+            </div>
+            <div class="absolute bottom-4 text-xs text-gray-500">
+                <p>This app uses Pusher for real-time events.</p>
+                <p>You'll need a free API key to connect players.</p>
+            </div>
+        </section>
+
+        <!-- TCG Selection View -->
+        <section id="tcg-selection-view" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
+            <h2 class="text-4xl font-bold mb-8">Choose Your TCG</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
+                <div id="select-pokemon" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-yellow-400 hover:bg-gray-600 transition-colors">
+                    <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/025.png" alt="Pokémon" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=Pokemon';">
+                    <h3 class="font-bold text-lg">Pokémon</h3>
+                </div>
+                <!-- Disabled TCGs -->
+                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
+                    <h3 class="font-bold text-lg text-gray-400">Magic: The Gathering</h3>
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
+                    <h3 class="font-bold text-lg text-gray-400">Yu-Gi-Oh!</h3>
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
+                    <h3 class="font-bold text-lg text-gray-400">One Piece</h3>
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
+                    <h3 class="font-bold text-lg text-gray-400">Lorcana</h3>
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                </div>
+                 <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
+                    <h3 class="font-bold text-lg text-gray-400">Dragonball Z</h3>
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                </div>
+            </div>
+             <button id="back-to-home-from-tcg" class="mt-8 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Back</button>
+        </section>
+
+        <!-- Game Settings View (as a modal) -->
+        <div id="game-settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold mb-4">Game Settings</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="font-bold">Player Name</label>
+                        <input type="text" id="player-name-input" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1" placeholder="Enter your name">
+                    </div>
+                    <div>
+                        <label class="font-bold">Prize Cards</label>
+                        <div class="flex space-x-2 mt-1">
+                            <button data-prizes="6" class="prize-option-btn flex-1 bg-blue-600 text-white rounded p-2">6 (Standard)</button>
+                            <button data-prizes="4" class="prize-option-btn flex-1 bg-gray-600 text-white rounded p-2">4 (Pre-Release)</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-bold">Timer Type</label>
+                        <div class="flex space-x-2 mt-1">
+                            <button data-timer="countdown" class="timer-type-btn flex-1 bg-blue-600 text-white rounded p-2">Countdown</button>
+                            <button data-timer="chess" class="timer-type-btn flex-1 bg-gray-600 text-white rounded p-2">Chess Clock</button>
+                        </div>
+                    </div>
+                    <div id="countdown-timer-settings">
+                        <label class="font-bold">Round Time (minutes)</label>
+                        <input type="number" id="countdown-minutes" value="50" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
+                    </div>
+                    <div id="chess-timer-settings" class="hidden">
+                        <label class="font-bold">Time Per Player (minutes)</label>
+                        <input type="number" id="chess-minutes" value="25" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button id="cancel-settings-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
+                    <button id="confirm-create-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Create Battle</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Join Session Modal -->
+        <div id="join-session-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold mb-4">Join Battle</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="font-bold">Your Name</label>
+                        <input type="text" id="join-player-name" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1" placeholder="Enter your name">
+                    </div>
+                    <div>
+                        <label class="font-bold">5-Digit Room Code</label>
+                        <input type="text" id="room-code-input" maxlength="5" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1 text-center text-2xl tracking-widest" placeholder="_ _ _ _ _">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button id="cancel-join-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
+                    <button id="confirm-join-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Join</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Room View -->
+        <section id="game-room-view" class="hidden min-h-screen flex flex-col p-2 sm:p-4">
+            <header class="flex justify-between items-center mb-4">
+                <div class="text-sm">
+                    <p>Room: <span id="room-code-display" class="font-bold tracking-wider"></span></p>
+                    <p id="player-role" class="font-bold"></p>
+                </div>
+                <div class="text-center">
+                    <h1 class="text-2xl font-bangers text-yellow-400 logo-text tracking-wider">TCG BATTLE!</h1>
+                </div>
+                <div class="relative">
+                    <button id="host-menu-btn" class="hidden p-2"><i class="fas fa-bars fa-lg"></i></button>
+                    <div id="host-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-20">
+                        <a href="#" id="start-game-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-blue-500 hover:text-white">Start Game</a>
+                        <a href="#" id="restart-round-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-yellow-500 hover:text-white">Restart Round</a>
+                        <a href="#" id="kick-guest-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-orange-500 hover:text-white">Kick Guest</a>
+                        <a href="#" id="end-session-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">End Session</a>
+                        <a href="#" id="open-presenter-btn" target="_blank" class="block px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</a>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-grow flex flex-col items-center justify-center">
+                <div id="waiting-for-opponent" class="text-center">
+                    <h2 class="text-2xl font-bold">Waiting for opponent...</h2>
+                    <p class="text-gray-400">Share the room code to let them join.</p>
+                </div>
+
+                <div id="game-controls" class="hidden w-full max-w-lg text-center">
+                    <div id="game-status-info" class="mb-4 p-3 bg-gray-900 rounded-lg">
+                         <p id="game-status-text" class="text-xl font-bold text-yellow-400"></p>
+                         <div id="player-turn-info" class="flex justify-around items-center mt-2">
+                            <div id="player1-turn-indicator" class="p-2 rounded-lg">
+                                <p id="player1-name-turn" class="font-bold"></p>
+                            </div>
+                            <div id="player2-turn-indicator" class="p-2 rounded-lg">
+                                <p id="player2-name-turn" class="font-bold"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="timer-display-controls" class="mb-4 text-center"></div>
+                    
+                    <h3 class="font-bold text-xl mb-2">Your Prize Cards</h3>
+                    <div id="prize-card-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <!-- Prize cards will be generated here -->
+                    </div>
+                    
+                    <div id="chess-clock-controls" class="mt-4"></div>
+                </div>
+            </main>
+        </section>
+
+        <!-- Presenter View -->
+        <section id="presenter-view" class="hidden min-h-screen flex flex-col items-center justify-center bg-blue-900 p-4" style="background-color: #0c4a6e;">
+            <div id="presenter-board" class="w-full max-w-6xl mx-auto relative">
+                <div class="flex justify-between items-center">
+                    <!-- Player 1 Side -->
+                    <div id="presenter-p1-side" class="flex-1 flex flex-col items-center">
+                        <div id="presenter-p1-avatar" class="w-32 h-32 md:w-40 md:h-40 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
+                        <h2 id="presenter-p1-name" class="mt-2 text-xl md:text-2xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 1</h2>
+                    </div>
+                    
+                    <!-- Center Logo -->
+                    <div class="flex-shrink-0 mx-8">
+                         <h1 class="text-5xl md:text-7xl font-bangers text-yellow-400 logo-text tracking-wider">TCG<br>BATTLE!</h1>
+                    </div>
+
+                    <!-- Player 2 Side -->
+                    <div id="presenter-p2-side" class="flex-1 flex flex-col items-center">
+                        <div id="presenter-p2-avatar" class="w-32 h-32 md:w-40 md:h-40 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
+                        <h2 id="presenter-p2-name" class="mt-2 text-xl md:text-2xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 2</h2>
+                    </div>
+                </div>
+
+                <!-- Prize Card Arcs -->
+                <div id="presenter-p1-prizes" class="presenter-prize-container absolute left-0 top-1/2 -translate-y-1/2"></div>
+                <div id="presenter-p2-prizes" class="presenter-prize-container absolute right-0 top-1/2 -translate-y-1/2"></div>
+                
+                 <!-- Timer Display -->
+                <div id="presenter-timer-container" class="absolute bottom-[-60px] left-1/2 -translate-x-1/2 bg-black rounded-lg px-6 py-2 border-2 border-gray-600">
+                    <div id="presenter-timer" class="text-4xl md:text-5xl font-mono font-bold tabular-nums text-yellow-300">00:00</div>
+                    <div id="presenter-chess-timers" class="hidden w-full flex justify-around gap-8 text-3xl md:text-4xl font-mono font-bold tabular-nums text-yellow-300">
+                        <div id="presenter-chess-p1">00:00</div>
+                        <div id="presenter-chess-p2">00:00</div>
+                    </div>
+                </div>
+            </div>
+            <div class="absolute top-4 right-4 text-sm text-gray-300">Room: <span id="presenter-room-code" class="font-bold"></span></div>
+            <button id="fullscreen-btn" class="absolute top-4 left-4 text-white bg-black bg-opacity-25 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-50">
+                <i class="fas fa-expand"></i>
+            </button>
+        </section>
+
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- STATE MANAGEMENT ---
+    let appState = {
+        pusher: null,
+        channel: null,
+        myId: null,
+        isHost: false,
+        roomCode: null,
+        view: 'home', // home, tcgSelection, gameRoom, presenter
+        playerName: `Player${Math.floor(Math.random() * 900 + 100)}`,
+        game: {
+            tcg: 'pokemon',
+            status: 'waiting', // waiting, active, paused, finished
+            prizeCount: 6,
+            timerType: 'countdown', // countdown, chess
+            countdownMinutes: 50,
+            chessMinutes: 25,
+            players: {}, // { [id]: { name, prizesTaken: [], isHost, color } }
+            turn: null, // player id
+            timerState: {
+                running: false,
+                startTime: null,
+                elapsed: 0,
+                playerTimes: {} // { [id]: timeInMillis }
+            }
+        },
+    };
+
+    // --- PUSHER CONFIGURATION ---
+    const PUSHER_APP_KEY = '8206e71c1218d7e2a91d';
+    const PUSHER_CLUSTER = 'us2';
+
+    if (PUSHER_APP_KEY === 'YOUR_PUSHER_APP_KEY' || PUSHER_CLUSTER === 'YOUR_PUSHER_CLUSTER') {
+        console.warn("Pusher key not set. Real-time features will not work.");
+        alert("Developer Note: Please set your Pusher App Key and Cluster in the script to enable real-time functionality.");
+    }
+
+    // --- DOM ELEMENTS ---
+    const views = {
+        home: document.getElementById('home-view'),
+        tcgSelection: document.getElementById('tcg-selection-view'),
+        gameSettingsModal: document.getElementById('game-settings-modal'),
+        joinSessionModal: document.getElementById('join-session-modal'),
+        gameRoom: document.getElementById('game-room-view'),
+        presenter: document.getElementById('presenter-view'),
+    };
+    
+    // --- TRAINER AVATAR ---
+    const trainerSilhouetteSVG = `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+    const avatarColors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#8b5cf6', '#ec4899', '#f97316'];
+
+    // --- UTILITY FUNCTIONS ---
+    const generateRoomCode = () => Math.floor(10000 + Math.random() * 90000).toString();
+    const formatTime = (ms) => {
+        if (ms < 0) ms = 0;
+        const totalSeconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+        return `${minutes}:${seconds}`;
+    };
+
+    // --- VIEW MANAGEMENT ---
+    const showView = (viewName) => {
+        appState.view = viewName;
+        Object.keys(views).forEach(key => {
+            if (views[key]) {
+                 views[key].classList.add('hidden');
+            }
+        });
+        if (views[viewName]) {
+            views[viewName].classList.remove('hidden');
+        }
+    };
+    
+    const showModal = (modalName) => {
+        if (views[modalName]) views[modalName].classList.remove('hidden');
+    };
+    
+    const hideModal = (modalName) => {
+        if (views[modalName]) views[modalName].classList.add('hidden');
+    };
+
+    // --- RENDER FUNCTIONS (UI Updates) ---
+    const renderGameRoom = () => {
+        if (appState.view !== 'gameRoom') return;
+        const { game, myId, isHost } = appState;
+
+        // Render parts that don't depend on the player object first
+        document.getElementById('room-code-display').textContent = appState.roomCode;
+        document.getElementById('player-role').textContent = isHost ? 'You are the Host' : 'You are the Guest';
+        document.getElementById('host-menu-btn').classList.toggle('hidden', !isHost);
+        const presenterLink = document.getElementById('open-presenter-btn');
+        presenterLink.href = `?presenter=${appState.roomCode}`;
+
+        const me = game.players[myId];
+        if (!me) {
+            // If the player isn't in the game state yet (e.g., a guest who just joined),
+            // show the waiting message and hide the main controls.
+            document.getElementById('waiting-for-opponent').style.display = 'block';
+            document.getElementById('game-controls').style.display = 'none';
+            return; // Exit after rendering the basic info
+        }
+
+        // If we get here, 'me' exists, so we can render the full game state.
+        const opponentCount = Object.keys(game.players).length;
+        document.getElementById('waiting-for-opponent').style.display = opponentCount < 2 ? 'block' : 'none';
+        document.getElementById('game-controls').style.display = opponentCount >= 2 ? 'block' : 'none';
+
+        const prizeGrid = document.getElementById('prize-card-grid');
+        prizeGrid.innerHTML = '';
+        for (let i = 1; i <= game.prizeCount; i++) {
+            const card = document.createElement('button');
+            card.dataset.prizeId = i;
+            card.className = 'prize-card p-4 sm:p-6 rounded-lg font-bold text-2xl bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed';
+            card.textContent = i;
+            if (me.prizesTaken.includes(i)) card.classList.add('taken');
+            card.disabled = game.status !== 'active';
+            prizeGrid.appendChild(card);
+        }
+
+        const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
+        const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
+        const p1Indicator = document.getElementById('player1-turn-indicator');
+        const p2Indicator = document.getElementById('player2-turn-indicator');
+        
+        if (p1Id) document.getElementById('player1-name-turn').textContent = game.players[p1Id].name;
+        if (p2Id) document.getElementById('player2-name-turn').textContent = game.players[p2Id].name;
+
+        p1Indicator.classList.remove('turn-indicator-glow');
+        p2Indicator.classList.remove('turn-indicator-glow');
+        if (game.turn === p1Id) p1Indicator.classList.add('turn-indicator-glow');
+        if (game.turn === p2Id) p2Indicator.classList.add('turn-indicator-glow');
+
+        let statusText = "Waiting to start...";
+        if (game.status === 'active') statusText = "Game in progress!";
+        if (game.status === 'finished') {
+            const winner = Object.values(game.players).find(p => p.prizesTaken.length >= game.prizeCount);
+            statusText = winner ? `Game Over! ${winner.name} wins!` : "Game Over!";
+        }
+        document.getElementById('game-status-text').textContent = statusText;
+
+        renderTimerDisplay();
+        renderChessControls();
+    };
+
+    const renderTimerDisplay = () => {
+        const timerDisplay = document.getElementById('timer-display-controls');
+        if (!timerDisplay) return;
+
+        const { timerType, timerState } = appState.game;
+        let html = '';
+
+        if (timerType === 'countdown') {
+            const timeRemaining = (appState.game.countdownMinutes * 60 * 1000) - timerState.elapsed;
+            html = `<p class="text-4xl font-bold tabular-nums">${formatTime(timeRemaining)}</p>`;
+        } else {
+            const p1Id = Object.keys(appState.game.players).find(id => appState.game.players[id].isHost);
+            const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
+            const p1Time = timerState.playerTimes[p1Id] ?? (appState.game.chessMinutes * 60000);
+            const p2Time = timerState.playerTimes[p2Id] ?? (appState.game.chessMinutes * 60000);
+            html = `
+                <div class="flex justify-around items-center text-3xl font-bold tabular-nums">
+                    <div>
+                        <p class="text-sm">${p1Id ? appState.game.players[p1Id].name : 'Host'}</p>
+                        <p>${formatTime(p1Time)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm">${p2Id ? appState.game.players[p2Id].name : 'Guest'}</p>
+                        <p>${formatTime(p2Time)}</p>
+                    </div>
+                </div>`;
+        }
+        timerDisplay.innerHTML = html;
+    };
+    
+    const renderChessControls = () => {
+        const controlsContainer = document.getElementById('chess-clock-controls');
+        controlsContainer.innerHTML = '';
+        if (appState.game.timerType !== 'chess' || appState.game.status !== 'active') return;
+
+        const isMyTurn = appState.game.turn === appState.myId;
+        const button = document.createElement('button');
+        button.id = 'chess-end-turn-btn';
+        button.className = 'w-full max-w-xs bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
+        button.textContent = 'End My Turn';
+        button.disabled = !isMyTurn;
+        controlsContainer.appendChild(button);
+    };
+
+    const renderPresenter = () => {
+        if (appState.view !== 'presenter') return;
+        const { game } = appState;
+
+        const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
+        const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
+        
+        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], color: '#cccccc' };
+        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], color: '#cccccc' };
+
+        document.getElementById('presenter-p1-name').textContent = p1.name;
+        document.getElementById('presenter-p2-name').textContent = p2.name;
+        document.getElementById('presenter-room-code').textContent = appState.roomCode;
+        
+        const p1Avatar = document.getElementById('presenter-p1-avatar');
+        p1Avatar.innerHTML = trainerSilhouetteSVG;
+        p1Avatar.style.color = p1.color;
+        p1Avatar.classList.toggle('turn-indicator-glow', game.turn === p1Id);
+
+        const p2Avatar = document.getElementById('presenter-p2-avatar');
+        p2Avatar.innerHTML = trainerSilhouetteSVG;
+        p2Avatar.style.color = p2.color;
+        p2Avatar.classList.toggle('turn-indicator-glow', game.turn === p2Id);
+
+        const renderPrizesInArc = (player, containerId, isReversed) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const numPrizes = game.prizeCount;
+            const radius = 140; // Radius of the arc
+            const angleStep = 180 / (numPrizes + 1);
+
+            for (let i = 1; i <= numPrizes; i++) {
+                const angle = (angleStep * i) - 90;
+                const radians = angle * (Math.PI / 180);
+                
+                const x = radius * Math.cos(radians);
+                const y = radius * Math.sin(radians);
+
+                const prizeEl = document.createElement('div');
+                prizeEl.className = 'presenter-prize-card rounded-full flex items-center justify-center font-bold text-xl border-2';
+                prizeEl.style.transform = `translate(${isReversed ? -x : x}px, ${y}px)`;
+                
+                const taken = player.prizesTaken.includes(i);
+                prizeEl.classList.toggle('bg-gray-600', taken);
+                prizeEl.classList.toggle('text-gray-400', taken);
+                prizeEl.classList.toggle('border-gray-700', taken);
+                prizeEl.classList.toggle('bg-yellow-400', !taken);
+                prizeEl.classList.toggle('text-gray-900', !taken);
+                prizeEl.classList.toggle('border-yellow-500', !taken);
+                prizeEl.textContent = i;
+                container.appendChild(prizeEl);
+            }
+        };
+        renderPrizesInArc(p1, 'presenter-p1-prizes', true);
+        renderPrizesInArc(p2, 'presenter-p2-prizes', false);
+
+        const countdownTimerEl = document.getElementById('presenter-timer');
+        const chessTimersEl = document.getElementById('presenter-chess-timers');
+        const p1ChessEl = document.getElementById('presenter-chess-p1');
+        const p2ChessEl = document.getElementById('presenter-chess-p2');
+
+        if (game.timerType === 'countdown') {
+            countdownTimerEl.classList.remove('hidden');
+            chessTimersEl.classList.add('hidden');
+            const timeRemaining = (appState.game.countdownMinutes * 60 * 1000) - game.timerState.elapsed;
+            countdownTimerEl.textContent = formatTime(timeRemaining);
+        } else {
+            countdownTimerEl.classList.add('hidden');
+            chessTimersEl.classList.remove('hidden');
+            const p1Time = game.timerState.playerTimes[p1Id] ?? (appState.game.chessMinutes * 60000);
+            const p2Time = game.timerState.playerTimes[p2Id] ?? (appState.game.chessMinutes * 60000);
+            p1ChessEl.textContent = formatTime(p1Time);
+            p2ChessEl.textContent = formatTime(p2Time);
+            p1ChessEl.classList.toggle('text-green-400', game.turn === p1Id);
+            p2ChessEl.classList.toggle('text-green-400', game.turn === p2Id);
+        }
+    };
+
+    const fullRender = () => {
+        renderGameRoom();
+        renderPresenter();
+    };
+
+    // --- PUSHER LOGIC ---
+    const initPusher = () => {
+        appState.pusher = new Pusher(PUSHER_APP_KEY, {
+            cluster: PUSHER_CLUSTER,
+            authEndpoint: '/.netlify/functions/pusher-auth',
+            auth: {
+                params: {
+                    playerName: appState.playerName
+                }
+            }
+        });
+    };
+
+    const subscribeToChannel = (roomCode) => {
+        // Use 'presence-' prefix for presence channels
+        appState.roomCode = roomCode;
+        appState.channel = appState.pusher.subscribe(`presence-tcg-battle-${roomCode}`);
+
+        appState.channel.bind('pusher:subscription_succeeded', (members) => {
+            console.log('Subscribed to channel:', roomCode);
+            if (appState.isHost) {
+                // Host receives the full member list on successful subscription
+                members.each(member => {
+                    if (member.id !== appState.myId) {
+                        const newPlayer = {
+                            name: member.info.playerName,
+                            prizesTaken: [],
+                            isHost: false
+                        };
+                        const existingColors = Object.values(appState.game.players).map(p => p.color);
+                        const availableColors = avatarColors.filter(c => !existingColors.includes(c));
+                        newPlayer.color = availableColors[0] || avatarColors[1];
+                        appState.game.players[member.id] = newPlayer;
+                    }
+                });
+                broadcastGameState();
+            }
+        });
+
+        appState.channel.bind('pusher:member_added', (member) => {
+            console.log('Member added:', member.id);
+            if (appState.isHost && member.id !== appState.myId) {
+                // A new guest has joined. The host updates the state and broadcasts.
+                const newPlayer = {
+                    name: member.info.playerName, // Pusher provides member info
+                    prizesTaken: [],
+                    isHost: false
+                };
+                
+                const existingColors = Object.values(appState.game.players).map(p => p.color);
+                const availableColors = avatarColors.filter(c => !existingColors.includes(c));
+                newPlayer.color = availableColors[0] || avatarColors[1];
+
+                appState.game.players[member.id] = newPlayer;
+                broadcastGameState();
+            }
+        });
+
+        appState.channel.bind('pusher:member_removed', (member) => {
+             if (appState.isHost) {
+                console.log('Member removed:', member.id);
+                delete appState.game.players[member.id];
+                if(appState.game.status === 'active') {
+                    appState.game.status = 'paused';
+                    appState.game.timerState.running = false;
+                }
+                broadcastGameState();
+            }
+        });
+        
+        appState.channel.bind('client-state-update', (data) => {
+            console.log('Received state update:', data);
+            // Only non-hosts should accept a full state update
+            if (!appState.isHost) {
+                appState.game = data;
+            }
+            if (appState.game.timerState.running && !timerInterval) {
+                startTimer();
+            } else if (!appState.game.timerState.running && timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            fullRender();
+        });
+        
+        appState.channel.bind('client-session-ended', () => {
+            sessionStorage.removeItem('tcgBattleSession');
+            alert('The host has ended the session.');
+            window.location.href = window.location.pathname;
+        });
+    };
+
+    const broadcastGameState = () => {
+        if (!appState.channel || !appState.isHost) return;
+        try {
+            // Use 'client-state-update' to send the game state
+            appState.channel.trigger('client-state-update', appState.game);
+        } catch (error) {
+            console.error("Pusher trigger failed:", error);
+        }
+    };
+    
+    // --- TIMER LOGIC ---
+    let timerInterval;
+    const startTimer = () => {
+        if (timerInterval) clearInterval(timerInterval);
+        if (!appState.game.timerState.running) return;
+        let lastTick = Date.now();
+        timerInterval = setInterval(() => {
+            if (!appState.game.timerState.running) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                return;
+            }
+            const delta = Date.now() - lastTick;
+            lastTick = Date.now();
+            if (appState.isHost) {
+                const { timerType, turn } = appState.game;
+                if (timerType === 'countdown') {
+                    appState.game.timerState.elapsed += delta;
+                    if ((appState.game.countdownMinutes * 60 * 1000) - appState.game.timerState.elapsed <= 0) {
+                        appState.game.timerState.running = false;
+                        playBuzzer();
+                    }
+                } else {
+                    if (turn && appState.game.timerState.playerTimes[turn]) {
+                        appState.game.timerState.playerTimes[turn] -= delta;
+                        if (appState.game.timerState.playerTimes[turn] <= 0) {
+                            appState.game.timerState.playerTimes[turn] = 0;
+                            appState.game.timerState.running = false;
+                            playBuzzer();
+                        }
+                    }
+                }
+                broadcastGameState();
+            }
+        }, 1000);
+    };
+
+    const playBuzzer = () => {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 1);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1);
+        } catch (e) { console.error("Could not play buzzer sound:", e); }
+    };
+
+    // --- EVENT HANDLERS ---
+    document.getElementById('create-session-btn').addEventListener('click', () => showView('tcgSelection'));
+    document.getElementById('join-session-btn').addEventListener('click', () => {
+        document.getElementById('join-player-name').value = appState.playerName;
+        showModal('joinSessionModal');
+    });
+    document.getElementById('back-to-home-from-tcg').addEventListener('click', () => showView('home'));
+    document.getElementById('select-pokemon').addEventListener('click', () => {
+        document.getElementById('player-name-input').value = appState.playerName;
+        showModal('gameSettingsModal');
+    });
+    document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
+        btn.classList.replace('bg-gray-600', 'bg-blue-600');
+        appState.game.prizeCount = parseInt(btn.dataset.prizes);
+    }));
+    document.querySelectorAll('.timer-type-btn').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelectorAll('.timer-type-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
+        btn.classList.replace('bg-gray-600', 'bg-blue-600');
+        appState.game.timerType = btn.dataset.timer;
+        document.getElementById('countdown-timer-settings').style.display = appState.game.timerType === 'countdown' ? 'block' : 'none';
+        document.getElementById('chess-timer-settings').style.display = appState.game.timerType === 'chess' ? 'block' : 'none';
+    }));
+    document.getElementById('cancel-settings-btn').addEventListener('click', () => hideModal('gameSettingsModal'));
+    document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
+    document.getElementById('confirm-create-btn').addEventListener('click', () => {
+        const sessionData = {
+            roomCode: generateRoomCode(),
+            myId: `host_${Date.now()}`,
+            isHost: true,
+            playerName: document.getElementById('player-name-input').value || appState.playerName,
+            view: 'gameRoom'
+        };
+        sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
+        init(); // Re-initialize the app from session storage
+    });
+    document.getElementById('confirm-join-btn').addEventListener('click', () => {
+        const roomCode = document.getElementById('room-code-input').value;
+        const playerName = document.getElementById('join-player-name').value;
+        if (!roomCode || roomCode.length !== 5 || !playerName) {
+            alert('Please enter a valid name and 5-digit room code.');
+            return;
+        }
+        const sessionData = {
+            roomCode: roomCode,
+            myId: `guest_${Date.now()}`,
+            isHost: false,
+            playerName: playerName,
+            view: 'gameRoom'
+        };
+        sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
+        init(); // Re-initialize the app from session storage
+    });
+    document.getElementById('prize-card-grid').addEventListener('click', (e) => {
+        if (e.target.classList.contains('prize-card') && appState.game.status === 'active') {
+            const prizeId = parseInt(e.target.dataset.prizeId);
+            const myPlayer = appState.game.players[appState.myId];
+            if (!myPlayer) return;
+            const myPrizes = myPlayer.prizesTaken;
+            if (myPrizes.includes(prizeId)) {
+                myPrizes.splice(myPrizes.indexOf(prizeId), 1);
+            } else {
+                myPrizes.push(prizeId);
+            }
+            if (myPrizes.length >= appState.game.prizeCount) {
+                appState.game.status = 'finished';
+                appState.game.timerState.running = false;
+                playBuzzer();
+            }
+            if (appState.isHost) {
+                broadcastGameState();
+            } else {
+                appState.channel.trigger('client-update-prizes', { prizes: myPrizes });
+            }
+        }
+    });
+    document.getElementById('host-menu-btn').addEventListener('click', () => {
+        document.getElementById('host-menu-dropdown').classList.toggle('hidden');
+    });
+    document.getElementById('start-game-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!appState.isHost) return;
+        const pIds = Object.keys(appState.game.players);
+        if (pIds.length < 2) {
+            alert("Cannot start, waiting for a guest to join.");
+            return;
+        }
+        appState.game.status = 'active';
+        appState.game.timerState.running = true;
+        appState.game.timerState.startTime = Date.now();
+        appState.game.timerState.elapsed = 0;
+        appState.game.turn = pIds.find(id => appState.game.players[id].isHost);
+        if (appState.game.timerType === 'chess') {
+            pIds.forEach(id => {
+                appState.game.timerState.playerTimes[id] = appState.game.chessMinutes * 60 * 1000;
+            });
+        }
+        broadcastGameState();
+        startTimer();
+        document.getElementById('host-menu-dropdown').classList.add('hidden');
+    });
+    document.getElementById('restart-round-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if(!appState.isHost) return;
+        Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
+        appState.game.status = 'waiting';
+        appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
+        if(timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        broadcastGameState();
+        document.getElementById('host-menu-dropdown').classList.add('hidden');
+    });
+    document.getElementById('end-session-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if(!appState.isHost) return;
+        appState.channel.trigger('client-session-ended', {});
+        setTimeout(() => {
+            sessionStorage.removeItem('tcgBattleSession');
+            window.location.href = window.location.pathname
+        }, 500);
+    });
+    document.getElementById('kick-guest-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if(!appState.isHost) return;
+        const guestId = Object.keys(appState.game.players).find(id => !appState.game.players[id].isHost);
+        if(guestId) {
+            appState.channel.trigger('client-player-leave', {id: guestId});
+            delete appState.game.players[guestId];
+            broadcastGameState();
+        }
+        document.getElementById('host-menu-dropdown').classList.add('hidden');
+    });
+    document.body.addEventListener('click', (e) => {
+        if (e.target.id === 'chess-end-turn-btn') {
+            const pIds = Object.keys(appState.game.players);
+            const myId = appState.myId;
+            const otherPlayerId = pIds.find(id => id !== myId);
+            appState.game.turn = otherPlayerId;
+            if (appState.isHost) {
+                broadcastGameState();
+            } else {
+                appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
+            }
+        }
+        if (document.getElementById('host-menu-dropdown') && !document.getElementById('host-menu-btn').contains(e.target) && !document.getElementById('host-menu-dropdown').contains(e.target)) {
+            document.getElementById('host-menu-dropdown').classList.add('hidden');
+        }
+    });
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    fullscreenBtn.addEventListener('click', () => {
+        const elem = document.documentElement;
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    // --- INITIALIZATION ---
+    const init = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const presenterCode = urlParams.get('presenter');
+        const roomToJoin = urlParams.get('join');
+        const savedSession = sessionStorage.getItem('tcgBattleSession');
+
+        if (savedSession) {
+            const sessionData = JSON.parse(savedSession);
+            appState.roomCode = sessionData.roomCode;
+            appState.myId = sessionData.myId;
+            appState.isHost = sessionData.isHost;
+            appState.playerName = sessionData.playerName;
+            
+            initPusher();
+            subscribeToChannel(appState.roomCode);
+            showView(sessionData.view);
+
+            if (appState.isHost) {
+                 appState.game.players = {
+                    [appState.myId]: { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0] }
+                };
+            }
+            fullRender();
+
+        } else if (presenterCode) {
+            appState.isHost = false;
+            appState.myId = `presenter_${Date.now()}`;
+            initPusher();
+            subscribeToChannel(presenterCode);
+            showView('presenter');
+        } else if (roomToJoin) {
+            document.getElementById('room-code-input').value = roomToJoin;
+            showModal('joinSessionModal');
+            showView('home'); // Show home in background
+        } else {
+            showView('home');
+        }
+    };
+
+    init();
+});
+</script>
+
+</body>
+</html>
