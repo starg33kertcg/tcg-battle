@@ -784,6 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         broadcastGameState();
         startTimer();
+        fullRender(); // Force host's screen to update
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('restart-round-btn').addEventListener('click', (e) => {
@@ -797,6 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timerInterval = null;
         }
         broadcastGameState();
+        fullRender(); // Force host's screen to update
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('end-session-btn').addEventListener('click', (e) => {
