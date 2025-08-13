@@ -202,6 +202,7 @@
                 <div class="relative">
                     <button id="host-menu-btn" class="hidden p-2"><i class="fas fa-bars fa-lg"></i></button>
                     <div id="host-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-20">
+                        <a href="#" id="start-game-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-blue-500 hover:text-white">Start Game</a>
                         <a href="#" id="restart-round-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-yellow-500 hover:text-white">Restart Round</a>
                         <a href="#" id="kick-guest-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-orange-500 hover:text-white">Kick Guest</a>
                         <a href="#" id="end-session-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">End Session</a>
@@ -447,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
             html = `<p class="text-4xl font-bold tabular-nums">${formatTime(timeRemaining)}</p>`;
         } else {
             const p1Id = Object.keys(appState.game.players).find(id => appState.game.players[id].isHost);
-            const p2Id = Object.keys(appState.game.players).find(id => !game.players[id].isHost);
+            const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
             const p1Time = timerState.playerTimes[p1Id] ?? (appState.game.chessMinutes * 60000);
             const p2Time = timerState.playerTimes[p2Id] ?? (appState.game.chessMinutes * 60000);
             html = `
@@ -543,13 +544,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (game.timerType === 'countdown') {
             countdownTimerEl.classList.remove('hidden');
             chessTimersEl.classList.add('hidden');
-            const timeRemaining = (game.countdownMinutes * 60 * 1000) - game.timerState.elapsed;
+            const timeRemaining = (appState.game.countdownMinutes * 60 * 1000) - game.timerState.elapsed;
             countdownTimerEl.textContent = formatTime(timeRemaining);
         } else {
             countdownTimerEl.classList.add('hidden');
             chessTimersEl.classList.remove('hidden');
-            const p1Time = game.timerState.playerTimes[p1Id] ?? (game.chessMinutes * 60000);
-            const p2Time = game.timerState.playerTimes[p2Id] ?? (game.chessMinutes * 60000);
+            const p1Time = game.timerState.playerTimes[p1Id] ?? (appState.game.chessMinutes * 60000);
+            const p2Time = game.timerState.playerTimes[p2Id] ?? (appState.game.chessMinutes * 60000);
             p1ChessEl.textContent = formatTime(p1Time);
             p2ChessEl.textContent = formatTime(p2Time);
             p1ChessEl.style.color = p1.color;
