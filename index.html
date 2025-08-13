@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
         controlsContainer.innerHTML = '';
         if (appState.game.timerType !== 'chess' || appState.game.status !== 'active') return;
 
-        const isMyTurn = appState.game.turn === appState.myId;
+        const isMyTurn = appState.myId === appState.game.turn;
         const button = document.createElement('button');
         button.id = 'chess-end-turn-btn';
         button.className = 'w-full max-w-xs bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
@@ -585,6 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 appState.game.players[member.id] = newPlayer;
                 broadcastGameState();
+                fullRender(); // Force host's screen to update
             }
         });
 
@@ -597,6 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     appState.game.timerState.running = false;
                 }
                 broadcastGameState();
+                fullRender(); // Force host's screen to update
             }
         });
         
