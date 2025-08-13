@@ -543,8 +543,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         appState.channel.bind('pusher:subscription_succeeded', (members) => {
             console.log('Subscribed to channel:', roomCode);
+            appState.myId = appState.channel.members.me.id; // Get the official ID from Pusher
+            
             if (appState.isHost) {
-                // Host receives the full member list on successful subscription
+                // Host creates its own player object using the official ID
+                appState.game.players = {
+                    [appState.myId]: { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0] }
+                };
+
+                // Host adds any other members already in the channel (e.g., a guest who joined first)
                 members.each(member => {
                     if (member.id !== appState.myId) {
                         const newPlayer = {
@@ -559,24 +566,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 broadcastGameState();
+            } else {
+                // Guest announces its presence to the host
+                appState.channel.trigger('client-guest-ready', { id: appState.myId, name: appState.playerName });
             }
         });
 
-        appState.channel.bind('pusher:member_added', (member) => {
-            console.log('Member added:', member.id);
-            if (appState.isHost && member.id !== appState.myId) {
-                // A new guest has joined. The host updates the state and broadcasts.
+        appState.channel.bind('client-guest-ready', (data) => {
+            if (appState.isHost && !appState.game.players[data.id]) {
+                console.log('Guest is ready:', data.name);
                 const newPlayer = {
-                    name: member.info.playerName, // Pusher provides member info
+                    name: data.name,
                     prizesTaken: [],
                     isHost: false
                 };
-                
                 const existingColors = Object.values(appState.game.players).map(p => p.color);
                 const availableColors = avatarColors.filter(c => !existingColors.includes(c));
                 newPlayer.color = availableColors[0] || avatarColors[1];
-
-                appState.game.players[member.id] = newPlayer;
+                appState.game.players[data.id] = newPlayer;
                 broadcastGameState();
             }
         });
@@ -706,7 +713,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('confirm-create-btn').addEventListener('click', () => {
         const sessionData = {
             roomCode: generateRoomCode(),
-            myId: `host_${Date.now()}`,
             isHost: true,
             playerName: document.getElementById('player-name-input').value || appState.playerName,
             view: 'gameRoom'
@@ -723,7 +729,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const sessionData = {
             roomCode: roomCode,
-            myId: `guest_${Date.now()}`,
             isHost: false,
             playerName: playerName,
             view: 'gameRoom'
@@ -850,19 +855,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedSession) {
             const sessionData = JSON.parse(savedSession);
             appState.roomCode = sessionData.roomCode;
-            appState.myId = sessionData.myId;
             appState.isHost = sessionData.isHost;
             appState.playerName = sessionData.playerName;
             
             initPusher();
             subscribeToChannel(appState.roomCode);
             showView(sessionData.view);
-
-            if (appState.isHost) {
-                 appState.game.players = {
-                    [appState.myId]: { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0] }
-                };
-            }
             fullRender();
 
         } else if (presenterCode) {
