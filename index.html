@@ -543,17 +543,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const y = radius * Math.sin(radians);
 
                 const prizeEl = document.createElement('div');
-                prizeEl.className = 'presenter-prize-card rounded-full flex items-center justify-center font-bold text-xl border-2';
+                prizeEl.className = 'presenter-prize-pokeball';
                 prizeEl.style.transform = `translate(${isReversed ? -x : x}px, ${y}px)`;
                 
                 const taken = player.prizesTaken.includes(i);
-                prizeEl.classList.toggle('bg-gray-600', taken);
-                prizeEl.classList.toggle('text-gray-400', taken);
-                prizeEl.classList.toggle('border-gray-700', taken);
-                prizeEl.classList.toggle('bg-yellow-400', !taken);
-                prizeEl.classList.toggle('text-gray-900', !taken);
-                prizeEl.classList.toggle('border-yellow-500', !taken);
-                prizeEl.textContent = i;
+                if(taken) prizeEl.classList.add('taken');
                 container.appendChild(prizeEl);
             }
         };
@@ -579,8 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
             p2ChessEl.textContent = formatTime(p2Time);
             p1ChessEl.style.color = p1.color;
             p2ChessEl.style.color = p2.color;
-            p1ChessEl.classList.toggle('turn-indicator-glow', game.turn === p1Id);
-            p2ChessEl.classList.toggle('turn-indicator-glow', game.turn === p2Id);
         }
     };
 
