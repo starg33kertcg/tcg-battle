@@ -411,14 +411,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const me = game.players[myId];
         if (!me) {
-            // If the player isn't in the game state yet (e.g., a guest who just joined),
-            // show the waiting message and hide the main controls.
             document.getElementById('waiting-for-opponent').style.display = 'block';
             document.getElementById('game-controls').style.display = 'none';
-            return; // Exit after rendering the basic info
+            return;
         }
 
-        // If we get here, 'me' exists, so we can render the full game state.
         const opponentCount = Object.keys(game.players).length;
         document.getElementById('waiting-for-opponent').style.display = opponentCount < 2 ? 'block' : 'none';
         document.getElementById('game-controls').style.display = opponentCount >= 2 ? 'block' : 'none';
@@ -440,8 +437,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const p1Indicator = document.getElementById('player1-turn-indicator');
         const p2Indicator = document.getElementById('player2-turn-indicator');
         
-        if (p1Id) document.getElementById('player1-name-turn').textContent = game.players[p1Id].name;
-        if (p2Id) document.getElementById('player2-name-turn').textContent = game.players[p2Id].name;
+        // --- FIX: Display prize counts for both players ---
+        if (p1Id && game.players[p1Id]) {
+            const p1 = game.players[p1Id];
+            const p1PrizesLeft = game.prizeCount - p1.prizesTaken.length;
+            document.getElementById('player1-name-turn').textContent = `${p1.name} (${p1PrizesLeft} Prizes)`;
+        }
+        if (p2Id && game.players[p2Id]) {
+            const p2 = game.players[p2Id];
+            const p2PrizesLeft = game.prizeCount - p2.prizesTaken.length;
+            document.getElementById('player2-name-turn').textContent = `${p2.name} (${p2PrizesLeft} Prizes)`;
+        }
 
         p1Indicator.classList.remove('turn-indicator-glow');
         p2Indicator.classList.remove('turn-indicator-glow');
@@ -647,18 +653,15 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.channel.bind('pusher:member_added', (member) => {
             console.log('Member added:', member.id);
             if (appState.isHost && member.id !== appState.myId) {
-                // --- FIX: Only add a new player if there's room for one ---
                 const playerCount = Object.keys(appState.game.players).length;
                 if (playerCount >= 2) {
                     console.log("Spectator/Presenter joined. Not adding to game.");
-                    // Send the current state to the new member so they can sync up
                     broadcastGameState();
                     return;
                 }
 
-                // A new guest has joined. The host updates the state and broadcasts.
                 const newPlayer = {
-                    name: member.info.playerName, // Pusher provides member info
+                    name: member.info.playerName,
                     prizesTaken: [],
                     isHost: false
                 };
@@ -669,14 +672,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 appState.game.players[member.id] = newPlayer;
                 broadcastGameState();
-                fullRender(); // Force host's screen to update
+                fullRender();
             }
         });
 
         appState.channel.bind('pusher:member_removed', (member) => {
              if (appState.isHost) {
                 console.log('Member removed:', member.id);
-                // Don't remove if it's just a spectator/presenter leaving
                 if (appState.game.players[member.id]) {
                     delete appState.game.players[member.id];
                     if(appState.game.status === 'active') {
@@ -684,12 +686,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         appState.game.timerState.running = false;
                     }
                     broadcastGameState();
-                    fullRender(); // Force host's screen to update
+                    fullRender();
                 }
             }
         });
         
-        // This listener is now ONLY for non-host clients
         appState.channel.bind('client-state-update', (data) => {
             if (!appState.isHost) {
                 console.log('Guest/Presenter received state update:', data);
@@ -709,7 +710,6 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = window.location.pathname;
         });
 
-        // Add event listeners for the host to react to guest actions
         if (appState.isHost) {
             appState.channel.bind('client-update-prizes', (data, metadata) => {
                 const playerId = metadata.user_id;
@@ -724,7 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     broadcastGameState();
-                    fullRender(); // Host renders its own UI
+                    fullRender();
                 }
             });
 
@@ -734,7 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (appState.game.turn === playerId) {
                     appState.game.turn = data.turn;
                     broadcastGameState();
-                    fullRender(); // Host renders its own UI
+                    fullRender();
                 }
             });
         }
@@ -749,11 +749,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // TIMER LOGIC (HOST ONLY)
     let timerInterval;
     const startTimer = () => {
         if (timerInterval) clearInterval(timerInterval);
-        if (!appState.game.timerState.running || !appState.isHost) return; // Guard for host only
+        if (!appState.game.timerState.running || !appState.isHost) return;
 
         let lastTick = Date.now();
         timerInterval = setInterval(() => {
@@ -784,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             broadcastGameState();
-            fullRender(); // Host renders its own UI every tick
+            fullRender();
         }, 1000);
     };
 
@@ -795,7 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.game.timerState.running = true;
         appState.game.timerState.startTime = Date.now();
         appState.game.timerState.elapsed = 0;
-        appState.game.turn = firstPlayerId; // Set the chosen player's turn
+        appState.game.turn = firstPlayerId;
 
         if (appState.game.timerType === 'chess') {
             Object.keys(appState.game.players).forEach(id => {
@@ -860,10 +859,10 @@ document.addEventListener('DOMContentLoaded', () => {
             isHost: true,
             playerName: appState.playerName,
             view: 'gameRoom',
-            game: appState.game // Include game settings in the session
+            game: appState.game
         };
         sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
-        init(); // Re-initialize the app from session storage
+        init();
     });
 
     document.getElementById('confirm-join-btn').addEventListener('click', () => {
@@ -880,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
             view: 'gameRoom'
         };
         sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
-        init(); // Re-initialize the app from session storage
+        init();
     });
     document.getElementById('prize-card-grid').addEventListener('click', (e) => {
         if (e.target.classList.contains('prize-card') && appState.game.status === 'active') {
@@ -920,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        renderChooseFirstPlayerModal(); // Show the modal instead of starting directly
+        renderChooseFirstPlayerModal();
 
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
@@ -1029,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (roomToJoin) {
             document.getElementById('room-code-input').value = roomToJoin;
             showModal('joinSessionModal');
-            showView('home'); // Show home in background
+            showView('home');
         } else {
             showView('home');
         }
