@@ -30,22 +30,22 @@
         @keyframes pulse-green { 0% { box-shadow: 0 0 25px 8px #22c55e; } 70% { box-shadow: 0 0 35px 12px #16a34a; } 100% { box-shadow: 0 0 25px 8px #22c55e; } }
         .modal-backdrop { background-color: rgba(0,0,0,0.75); }
 
-        /* New Presenter Styles */
+        /* --- FIX: Updated Presenter Styles --- */
         .presenter-prize-container {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 350px; /* Increased container size */
+            height: 350px;
         }
         .presenter-prize-pokeball {
             position: absolute;
             left: 50%;
             top: 50%;
-            margin: -24px; /* Half of width/height */
-            width: 48px;
-            height: 48px;
+            margin: -32px; /* Half of new width/height */
+            width: 64px;   /* Increased size */
+            height: 64px;  /* Increased size */
             border-radius: 50%;
             background: linear-gradient(to bottom, #ef4444 0%, #ef4444 50%, #f9fafb 50%, #f9fafb 100%);
-            border: 2px solid #1f2937;
+            border: 3px solid #1f2937; /* Thicker border */
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -54,18 +54,18 @@
         .presenter-prize-pokeball::before {
             content: '';
             position: absolute;
-            height: 6px;
+            height: 8px; /* Thicker line */
             width: 100%;
             background: #1f2937;
         }
         .presenter-prize-pokeball::after {
             content: '';
             position: absolute;
-            height: 16px;
-            width: 16px;
+            height: 22px; /* Larger button */
+            width: 22px;  /* Larger button */
             border-radius: 50%;
             background: #f9fafb;
-            border: 4px solid #1f2937;
+            border: 5px solid #1f2937; /* Thicker border */
         }
         .presenter-prize-pokeball.taken {
             filter: grayscale(100%);
@@ -437,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const p1Indicator = document.getElementById('player1-turn-indicator');
         const p2Indicator = document.getElementById('player2-turn-indicator');
         
-        // --- FIX: Display prize counts for both players ---
         if (p1Id && game.players[p1Id]) {
             const p1 = game.players[p1Id];
             const p1PrizesLeft = game.prizeCount - p1.prizesTaken.length;
@@ -538,11 +537,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             const numPrizes = game.prizeCount;
-            const radius = 140; // Radius of the arc
-            const angleStep = 180 / (numPrizes + 1);
+            const radius = 170; // --- FIX: Increased radius for a wider arc ---
+            const angleStep = 220 / (numPrizes + 1); // --- FIX: Increased total angle for a longer arc ---
 
             for (let i = 1; i <= numPrizes; i++) {
-                const angle = (angleStep * i) - 90;
+                const angle = (angleStep * i) - (isReversed ? 200 : -20); // --- FIX: Adjusted start angle ---
                 const radians = angle * (Math.PI / 180);
                 
                 const x = radius * Math.cos(radians);
