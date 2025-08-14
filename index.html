@@ -96,8 +96,7 @@
                 <button id="join-session-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105">Join an existing battle</button>
             </div>
             <div class="absolute bottom-4 text-xs text-gray-500">
-                <p>This app uses Pusher for real-time events.</p>
-                <p>You'll need a free API key to connect players.</p>
+                <p>This app is currently in a closed beta. Expect bugs and glitches.</p>
             </div>
         </section>
 
@@ -538,11 +537,12 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = '';
             const numPrizes = game.prizeCount;
             const radius = 220;
-            const totalAngle = 180;
+            const totalAngle = 150; // --- FIX: Reduced angle for a tighter arc ---
             const angleStep = numPrizes > 1 ? totalAngle / (numPrizes - 1) : 0;
+            const startAngle = -75; // --- FIX: Adjusted start angle to re-center the arc ---
 
             for (let i = 1; i <= numPrizes; i++) {
-                const angle = -90 + (angleStep * (i - 1));
+                const angle = startAngle + (angleStep * (i - 1));
                 const radians = angle * (Math.PI / 180);
 
                 const x = radius * Math.cos(radians);
