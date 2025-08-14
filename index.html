@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
             html = `<p class="text-4xl font-bold tabular-nums">${formatTime(timeRemaining)}</p>`;
         } else {
             const p1Id = Object.keys(appState.game.players).find(id => appState.game.players[id].isHost);
-            const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
+            const p2Id = Object.keys(appState.game.players).find(id => !appState.game.players[id].isHost);
             const p1Time = timerState.playerTimes[p1Id] ?? (appState.game.chessMinutes * 60000);
             const p2Time = timerState.playerTimes[p2Id] ?? (appState.game.chessMinutes * 60000);
             html = `
@@ -681,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = window.location.pathname;
         });
 
-        // --- FIX STARTS HERE: Add event listeners for the host ---
+        // --- Add event listeners for the host ---
         if (appState.isHost) {
             appState.channel.bind('client-update-prizes', (data, metadata) => {
                 const playerId = metadata.user_id;
@@ -710,7 +710,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        // --- FIX ENDS HERE ---
     };
 
     const broadcastGameState = () => {
@@ -839,9 +838,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 myPrizes.push(prizeId);
             }
-
-            // The local render will happen when the broadcast comes back.
-            // This ensures the host is the source of truth.
             
             if (appState.isHost) {
                 // If host, check for winner and broadcast
@@ -851,6 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     playBuzzer();
                 }
                 broadcastGameState();
+                fullRender(); // --- FIX: Re-render host UI immediately ---
             } else {
                 // If guest, just send the update to the host
                 appState.channel.trigger('client-update-prizes', { prizes: myPrizes });
@@ -926,6 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.isHost) {
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
+                fullRender(); // --- FIX: Re-render host UI immediately ---
             } else {
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
             }
