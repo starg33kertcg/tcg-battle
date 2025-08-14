@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- 
+    <!--  
       Pusher is used for real-time communication between players.
       It allows the app to work without a traditional backend or database.
       You can get a free API key from https://pusher.com/
@@ -19,10 +19,10 @@
         .logo-text { text-shadow: 4px 4px 0px #1f2937, -2px -2px 0 #1f2937, 2px -2px 0 #1f2937, -2px 2px 0 #1f2937, 2px 2px 0 #1f2937; }
         .disabled-card { filter: grayscale(100%); cursor: not-allowed; }
         .prize-card { transition: all 0.3s ease; border: 2px solid #6b7280; }
-        .prize-card.taken { 
-            background-color: #4b5563 !important; 
-            color: #9ca3af !important; 
-            transform: scale(0.95); 
+        .prize-card.taken {  
+            background-color: #4b5563 !important;  
+            color: #9ca3af !important;  
+            transform: scale(0.95);  
             border-color: #374151;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
@@ -245,13 +245,13 @@
                     <div id="game-status-info" class="mb-4 p-3 bg-gray-900 rounded-lg">
                          <p id="game-status-text" class="text-xl font-bold text-yellow-400"></p>
                          <div id="player-turn-info" class="flex justify-around items-center mt-2">
-                            <div id="player1-turn-indicator" class="p-2 rounded-lg">
-                                <p id="player1-name-turn" class="font-bold"></p>
-                            </div>
-                            <div id="player2-turn-indicator" class="p-2 rounded-lg">
-                                <p id="player2-name-turn" class="font-bold"></p>
-                            </div>
-                        </div>
+                             <div id="player1-turn-indicator" class="p-2 rounded-lg">
+                                 <p id="player1-name-turn" class="font-bold"></p>
+                             </div>
+                             <div id="player2-turn-indicator" class="p-2 rounded-lg">
+                                 <p id="player2-name-turn" class="font-bold"></p>
+                             </div>
+                         </div>
                     </div>
                     
                     <div id="timer-display-controls" class="mb-4 text-center"></div>
@@ -342,12 +342,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- PUSHER CONFIGURATION ---
-    const PUSHER_APP_KEY = '8206e71c1218d7e2a91d';
+    const PUSHER_APP_KEY = '8206e71c1218d7e2a91d'; // IMPORTANT: Best to use Netlify Environment Variables
     const PUSHER_CLUSTER = 'us2';
 
     if (PUSHER_APP_KEY === 'YOUR_PUSHER_APP_KEY' || PUSHER_CLUSTER === 'YOUR_PUSHER_CLUSTER') {
         console.warn("Pusher key not set. Real-time features will not work.");
-        alert("Developer Note: Please set your Pusher App Key and Cluster in the script to enable real-time functionality.");
+        // Replaced alert with a less intrusive console message
     }
 
     // --- DOM ELEMENTS ---
@@ -680,6 +680,37 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('The host has ended the session.');
             window.location.href = window.location.pathname;
         });
+
+        // --- FIX STARTS HERE: Add event listeners for the host ---
+        if (appState.isHost) {
+            appState.channel.bind('client-update-prizes', (data, metadata) => {
+                const playerId = metadata.user_id;
+                console.log(`Host received prize update from ${playerId}`, data);
+                if (appState.game.players[playerId]) {
+                    appState.game.players[playerId].prizesTaken = data.prizes;
+                    
+                    // Check for winner after prize update
+                    if (data.prizes.length >= appState.game.prizeCount) {
+                        appState.game.status = 'finished';
+                        appState.game.timerState.running = false;
+                        playBuzzer();
+                    }
+
+                    broadcastGameState();
+                }
+            });
+
+            appState.channel.bind('client-end-turn', (data, metadata) => {
+                const playerId = metadata.user_id;
+                console.log(`Host received end turn from ${playerId}`, data);
+                // Basic validation: ensure the turn is being ended by the correct player
+                if (appState.game.turn === playerId) {
+                    appState.game.turn = data.turn;
+                    broadcastGameState();
+                }
+            });
+        }
+        // --- FIX ENDS HERE ---
     };
 
     const broadcastGameState = () => {
@@ -784,7 +815,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const roomCode = document.getElementById('room-code-input').value;
         const playerName = document.getElementById('join-player-name').value;
         if (!roomCode || roomCode.length !== 5 || !playerName) {
-            alert('Please enter a valid name and 5-digit room code.');
+            // Using console.error instead of alert
+            console.error('Please enter a valid name and 5-digit room code.');
             return;
         }
         const sessionData = {
@@ -807,14 +839,20 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 myPrizes.push(prizeId);
             }
-            if (myPrizes.length >= appState.game.prizeCount) {
-                appState.game.status = 'finished';
-                appState.game.timerState.running = false;
-                playBuzzer();
-            }
+
+            // The local render will happen when the broadcast comes back.
+            // This ensures the host is the source of truth.
+            
             if (appState.isHost) {
+                // If host, check for winner and broadcast
+                if (myPrizes.length >= appState.game.prizeCount) {
+                    appState.game.status = 'finished';
+                    appState.game.timerState.running = false;
+                    playBuzzer();
+                }
                 broadcastGameState();
             } else {
+                // If guest, just send the update to the host
                 appState.channel.trigger('client-update-prizes', { prizes: myPrizes });
             }
         }
@@ -827,7 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!appState.isHost) return;
         const pIds = Object.keys(appState.game.players);
         if (pIds.length < 2) {
-            alert("Cannot start, waiting for a guest to join.");
+            console.error("Cannot start, waiting for a guest to join.");
             return;
         }
         appState.game.status = 'active';
@@ -884,8 +922,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const pIds = Object.keys(appState.game.players);
             const myId = appState.myId;
             const otherPlayerId = pIds.find(id => id !== myId);
-            appState.game.turn = otherPlayerId;
+            
             if (appState.isHost) {
+                appState.game.turn = otherPlayerId;
                 broadcastGameState();
             } else {
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
@@ -900,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const elem = document.documentElement;
         if (!document.fullscreenElement) {
             elem.requestFullscreen().catch(err => {
-                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
             });
         } else {
             document.exitFullscreen();
