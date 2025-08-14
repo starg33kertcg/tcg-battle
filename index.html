@@ -661,13 +661,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // --- FIX: This listener is now ONLY for non-host clients ---
+        // This listener is now ONLY for non-host clients
         appState.channel.bind('client-state-update', (data) => {
             if (!appState.isHost) {
                 console.log('Guest received state update:', data);
                 appState.game = data;
                 
-                // Stop local timer if game is no longer running
                 if (!appState.game.timerState.running && timerInterval) {
                     clearInterval(timerInterval);
                     timerInterval = null;
@@ -682,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = window.location.pathname;
         });
 
-        // --- Add event listeners for the host to react to guest actions ---
+        // Add event listeners for the host to react to guest actions
         if (appState.isHost) {
             appState.channel.bind('client-update-prizes', (data, metadata) => {
                 const playerId = metadata.user_id;
@@ -722,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- TIMER LOGIC (HOST ONLY) ---
+    // TIMER LOGIC (HOST ONLY)
     let timerInterval;
     const startTimer = () => {
         if (timerInterval) clearInterval(timerInterval);
@@ -757,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             broadcastGameState();
-            fullRender(); // --- FIX: Host renders its own UI every tick ---
+            fullRender(); // Host renders its own UI every tick
         }, 1000);
     };
 
@@ -802,16 +801,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
     document.getElementById('cancel-settings-btn').addEventListener('click', () => hideModal('gameSettingsModal'));
     document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
+    
+    // --- FIX: Correctly read and set custom timer values ---
     document.getElementById('confirm-create-btn').addEventListener('click', () => {
+        appState.playerName = document.getElementById('player-name-input').value || appState.playerName;
+        appState.game.countdownMinutes = parseInt(document.getElementById('countdown-minutes').value) || 50;
+        appState.game.chessMinutes = parseInt(document.getElementById('chess-minutes').value) || 25;
+
         const sessionData = {
             roomCode: generateRoomCode(),
             isHost: true,
-            playerName: document.getElementById('player-name-input').value || appState.playerName,
-            view: 'gameRoom'
+            playerName: appState.playerName,
+            view: 'gameRoom',
+            game: appState.game // Include game settings in the session
         };
         sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
         init(); // Re-initialize the app from session storage
     });
+
     document.getElementById('confirm-join-btn').addEventListener('click', () => {
         const roomCode = document.getElementById('room-code-input').value;
         const playerName = document.getElementById('join-player-name').value;
@@ -847,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     playBuzzer();
                 }
                 broadcastGameState();
-                fullRender(); // --- FIX: Host renders its own UI ---
+                fullRender();
             } else {
                 appState.channel.trigger('client-update-prizes', { prizes: myPrizes });
             }
@@ -876,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         broadcastGameState();
         startTimer();
-        fullRender(); // --- FIX: Host renders its own UI ---
+        fullRender();
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('restart-round-btn').addEventListener('click', (e) => {
@@ -890,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timerInterval = null;
         }
         broadcastGameState();
-        fullRender(); // --- FIX: Host renders its own UI ---
+        fullRender();
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('end-session-btn').addEventListener('click', (e) => {
@@ -922,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.isHost) {
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
-                fullRender(); // --- FIX: Host renders its own UI ---
+                fullRender();
             } else {
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
             }
@@ -955,6 +962,10 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.roomCode = sessionData.roomCode;
             appState.isHost = sessionData.isHost;
             appState.playerName = sessionData.playerName;
+            // --- FIX: Restore game settings from session ---
+            if (sessionData.game) {
+                appState.game = { ...appState.game, ...sessionData.game };
+            }
             
             initPusher();
             subscribeToChannel(appState.roomCode);
