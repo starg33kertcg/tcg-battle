@@ -624,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 broadcastGameState();
+                fullRender(); // Render host's initial state
             }
         });
 
@@ -660,18 +661,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+        // --- FIX: This listener is now ONLY for non-host clients ---
         appState.channel.bind('client-state-update', (data) => {
-            console.log('Received state update:', data);
-            // --- FIX: ALL clients (including host) should accept the state update ---
-            appState.game = data;
-            
-            if (appState.game.timerState.running && !timerInterval) {
-                startTimer();
-            } else if (!appState.game.timerState.running && timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
+            if (!appState.isHost) {
+                console.log('Guest received state update:', data);
+                appState.game = data;
+                
+                // Stop local timer if game is no longer running
+                if (!appState.game.timerState.running && timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                fullRender();
             }
-            fullRender();
         });
         
         appState.channel.bind('client-session-ended', () => {
@@ -680,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = window.location.pathname;
         });
 
-        // --- Add event listeners for the host ---
+        // --- Add event listeners for the host to react to guest actions ---
         if (appState.isHost) {
             appState.channel.bind('client-update-prizes', (data, metadata) => {
                 const playerId = metadata.user_id;
@@ -688,7 +690,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (appState.game.players[playerId]) {
                     appState.game.players[playerId].prizesTaken = data.prizes;
                     
-                    // Check for winner after prize update
                     if (data.prizes.length >= appState.game.prizeCount) {
                         appState.game.status = 'finished';
                         appState.game.timerState.running = false;
@@ -696,16 +697,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     broadcastGameState();
+                    fullRender(); // Host renders its own UI
                 }
             });
 
             appState.channel.bind('client-end-turn', (data, metadata) => {
                 const playerId = metadata.user_id;
                 console.log(`Host received end turn from ${playerId}`, data);
-                // Basic validation: ensure the turn is being ended by the correct player
                 if (appState.game.turn === playerId) {
                     appState.game.turn = data.turn;
                     broadcastGameState();
+                    fullRender(); // Host renders its own UI
                 }
             });
         }
@@ -714,18 +716,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const broadcastGameState = () => {
         if (!appState.channel || !appState.isHost) return;
         try {
-            // Use 'client-state-update' to send the game state
             appState.channel.trigger('client-state-update', appState.game);
         } catch (error) {
             console.error("Pusher trigger failed:", error);
         }
     };
     
-    // --- TIMER LOGIC ---
+    // --- TIMER LOGIC (HOST ONLY) ---
     let timerInterval;
     const startTimer = () => {
         if (timerInterval) clearInterval(timerInterval);
-        if (!appState.game.timerState.running) return;
+        if (!appState.game.timerState.running || !appState.isHost) return; // Guard for host only
+
         let lastTick = Date.now();
         timerInterval = setInterval(() => {
             if (!appState.game.timerState.running) {
@@ -735,26 +737,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const delta = Date.now() - lastTick;
             lastTick = Date.now();
-            if (appState.isHost) {
-                const { timerType, turn } = appState.game;
-                if (timerType === 'countdown') {
-                    appState.game.timerState.elapsed += delta;
-                    if ((appState.game.countdownMinutes * 60 * 1000) - appState.game.timerState.elapsed <= 0) {
+            
+            const { timerType, turn } = appState.game;
+            if (timerType === 'countdown') {
+                appState.game.timerState.elapsed += delta;
+                if ((appState.game.countdownMinutes * 60 * 1000) - appState.game.timerState.elapsed <= 0) {
+                    appState.game.timerState.running = false;
+                    playBuzzer();
+                }
+            } else {
+                if (turn && appState.game.timerState.playerTimes[turn]) {
+                    appState.game.timerState.playerTimes[turn] -= delta;
+                    if (appState.game.timerState.playerTimes[turn] <= 0) {
+                        appState.game.timerState.playerTimes[turn] = 0;
                         appState.game.timerState.running = false;
                         playBuzzer();
                     }
-                } else {
-                    if (turn && appState.game.timerState.playerTimes[turn]) {
-                        appState.game.timerState.playerTimes[turn] -= delta;
-                        if (appState.game.timerState.playerTimes[turn] <= 0) {
-                            appState.game.timerState.playerTimes[turn] = 0;
-                            appState.game.timerState.running = false;
-                            playBuzzer();
-                        }
-                    }
                 }
-                broadcastGameState();
             }
+            
+            broadcastGameState();
+            fullRender(); // --- FIX: Host renders its own UI every tick ---
         }, 1000);
     };
 
@@ -813,7 +816,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const roomCode = document.getElementById('room-code-input').value;
         const playerName = document.getElementById('join-player-name').value;
         if (!roomCode || roomCode.length !== 5 || !playerName) {
-            // Using console.error instead of alert
             console.error('Please enter a valid name and 5-digit room code.');
             return;
         }
@@ -839,16 +841,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (appState.isHost) {
-                // If host, check for winner and broadcast
                 if (myPrizes.length >= appState.game.prizeCount) {
                     appState.game.status = 'finished';
                     appState.game.timerState.running = false;
                     playBuzzer();
                 }
                 broadcastGameState();
-                // No longer need to call fullRender() here, the broadcast will handle it
+                fullRender(); // --- FIX: Host renders its own UI ---
             } else {
-                // If guest, just send the update to the host
                 appState.channel.trigger('client-update-prizes', { prizes: myPrizes });
             }
         }
@@ -876,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         broadcastGameState();
         startTimer();
-        // No longer need to call fullRender() here, the broadcast will handle it
+        fullRender(); // --- FIX: Host renders its own UI ---
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('restart-round-btn').addEventListener('click', (e) => {
@@ -890,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timerInterval = null;
         }
         broadcastGameState();
-        // No longer need to call fullRender() here, the broadcast will handle it
+        fullRender(); // --- FIX: Host renders its own UI ---
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('end-session-btn').addEventListener('click', (e) => {
@@ -922,7 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.isHost) {
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
-                // No longer need to call fullRender() here, the broadcast will handle it
+                fullRender(); // --- FIX: Host renders its own UI ---
             } else {
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
             }
