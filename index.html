@@ -662,10 +662,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         appState.channel.bind('client-state-update', (data) => {
             console.log('Received state update:', data);
-            // Only non-hosts should accept a full state update
-            if (!appState.isHost) {
-                appState.game = data;
-            }
+            // --- FIX: ALL clients (including host) should accept the state update ---
+            appState.game = data;
+            
             if (appState.game.timerState.running && !timerInterval) {
                 startTimer();
             } else if (!appState.game.timerState.running && timerInterval) {
@@ -847,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     playBuzzer();
                 }
                 broadcastGameState();
-                fullRender(); // --- FIX: Re-render host UI immediately ---
+                // No longer need to call fullRender() here, the broadcast will handle it
             } else {
                 // If guest, just send the update to the host
                 appState.channel.trigger('client-update-prizes', { prizes: myPrizes });
@@ -877,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         broadcastGameState();
         startTimer();
-        fullRender(); // Force host's screen to update
+        // No longer need to call fullRender() here, the broadcast will handle it
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('restart-round-btn').addEventListener('click', (e) => {
@@ -891,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timerInterval = null;
         }
         broadcastGameState();
-        fullRender(); // Force host's screen to update
+        // No longer need to call fullRender() here, the broadcast will handle it
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
     document.getElementById('end-session-btn').addEventListener('click', (e) => {
@@ -923,7 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.isHost) {
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
-                fullRender(); // --- FIX: Re-render host UI immediately ---
+                // No longer need to call fullRender() here, the broadcast will handle it
             } else {
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
             }
