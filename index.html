@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
             html = `<p class="text-4xl font-bold tabular-nums">${formatTime(timeRemaining)}</p>`;
         } else {
             const p1Id = Object.keys(appState.game.players).find(id => appState.game.players[id].isHost);
-            const p2Id = Object.keys(appState.game.players).find(id => !appState.game.players[id].isHost);
+            const p2Id = Object.keys(appState.game.players).find(id => !game.players[id].isHost);
             const p1Time = timerState.playerTimes[p1Id] ?? (appState.game.chessMinutes * 60000);
             const p2Time = timerState.playerTimes[p2Id] ?? (appState.game.chessMinutes * 60000);
             html = `
@@ -574,6 +574,23 @@ document.addEventListener('DOMContentLoaded', () => {
             p1ChessEl.style.color = p1.color;
             p2ChessEl.style.color = p2.color;
         }
+    };
+
+    // --- FIX: New function to render the 'Choose First Player' modal ---
+    const renderChooseFirstPlayerModal = () => {
+        const optionsDiv = document.getElementById('first-player-options');
+        optionsDiv.innerHTML = ''; // Clear previous options
+
+        Object.keys(appState.game.players).forEach(playerId => {
+            const player = appState.game.players[playerId];
+            const btn = document.createElement('button');
+            btn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl';
+            btn.textContent = player.name;
+            btn.dataset.playerId = playerId;
+            optionsDiv.appendChild(btn);
+        });
+
+        showModal('chooseFirstPlayerModal');
     };
 
     const fullRender = () => {
@@ -760,6 +777,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     };
 
+    // --- FIX: New function to handle the actual start of the game ---
+    const startGameWithFirstPlayer = (firstPlayerId) => {
+        if (!appState.isHost) return;
+
+        appState.game.status = 'active';
+        appState.game.timerState.running = true;
+        appState.game.timerState.startTime = Date.now();
+        appState.game.timerState.elapsed = 0;
+        appState.game.turn = firstPlayerId; // Set the chosen player's turn
+
+        if (appState.game.timerType === 'chess') {
+            Object.keys(appState.game.players).forEach(id => {
+                appState.game.timerState.playerTimes[id] = appState.game.chessMinutes * 60 * 1000;
+            });
+        }
+
+        broadcastGameState();
+        startTimer();
+        fullRender();
+    };
+
     const playBuzzer = () => {
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -802,7 +840,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cancel-settings-btn').addEventListener('click', () => hideModal('gameSettingsModal'));
     document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
     
-    // --- FIX: Correctly read and set custom timer values ---
     document.getElementById('confirm-create-btn').addEventListener('click', () => {
         appState.playerName = document.getElementById('player-name-input').value || appState.playerName;
         appState.game.countdownMinutes = parseInt(document.getElementById('countdown-minutes').value) || 50;
@@ -863,6 +900,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('host-menu-btn').addEventListener('click', () => {
         document.getElementById('host-menu-dropdown').classList.toggle('hidden');
     });
+
+    // --- FIX: Modified 'start-game-btn' listener to show the modal ---
     document.getElementById('start-game-btn').addEventListener('click', (e) => {
         e.preventDefault();
         if (!appState.isHost) return;
@@ -871,21 +910,23 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Cannot start, waiting for a guest to join.");
             return;
         }
-        appState.game.status = 'active';
-        appState.game.timerState.running = true;
-        appState.game.timerState.startTime = Date.now();
-        appState.game.timerState.elapsed = 0;
-        appState.game.turn = pIds.find(id => appState.game.players[id].isHost);
-        if (appState.game.timerType === 'chess') {
-            pIds.forEach(id => {
-                appState.game.timerState.playerTimes[id] = appState.game.chessMinutes * 60 * 1000;
-            });
-        }
-        broadcastGameState();
-        startTimer();
-        fullRender();
+        
+        renderChooseFirstPlayerModal(); // Show the modal instead of starting directly
+
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
+
+    // --- FIX: New listener for the modal buttons ---
+    document.getElementById('first-player-options').addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const firstPlayerId = e.target.dataset.playerId;
+            if (firstPlayerId) {
+                hideModal('chooseFirstPlayerModal');
+                startGameWithFirstPlayer(firstPlayerId);
+            }
+        }
+    });
+
     document.getElementById('restart-round-btn').addEventListener('click', (e) => {
         e.preventDefault();
         if(!appState.isHost) return;
@@ -962,7 +1003,6 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.roomCode = sessionData.roomCode;
             appState.isHost = sessionData.isHost;
             appState.playerName = sessionData.playerName;
-            // --- FIX: Restore game settings from session ---
             if (sessionData.game) {
                 appState.game = { ...appState.game, ...sessionData.game };
             }
