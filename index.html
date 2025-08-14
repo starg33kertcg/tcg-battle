@@ -33,8 +33,8 @@
         /* --- FIX: Updated Presenter Styles --- */
         .presenter-prize-container {
             position: relative;
-            width: 350px; /* Increased container size */
-            height: 350px;
+            width: 450px; /* Increased container size for larger arc */
+            height: 450px;
         }
         .presenter-prize-pokeball {
             position: absolute;
@@ -537,13 +537,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             const numPrizes = game.prizeCount;
-            const radius = 170; // --- FIX: Increased radius for a wider arc ---
-            const angleStep = 220 / (numPrizes + 1); // --- FIX: Increased total angle for a longer arc ---
+            const radius = 220;
+            const totalAngle = 180;
+            const angleStep = numPrizes > 1 ? totalAngle / (numPrizes - 1) : 0;
 
             for (let i = 1; i <= numPrizes; i++) {
-                const angle = (angleStep * i) - (isReversed ? 200 : -20); // --- FIX: Adjusted start angle ---
+                const angle = -90 + (angleStep * (i - 1));
                 const radians = angle * (Math.PI / 180);
-                
+
                 const x = radius * Math.cos(radians);
                 const y = radius * Math.sin(radians);
 
