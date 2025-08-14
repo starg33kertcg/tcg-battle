@@ -576,7 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- FIX: New function to render the 'Choose First Player' modal ---
     const renderChooseFirstPlayerModal = () => {
         const optionsDiv = document.getElementById('first-player-options');
         optionsDiv.innerHTML = ''; // Clear previous options
@@ -648,6 +647,15 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.channel.bind('pusher:member_added', (member) => {
             console.log('Member added:', member.id);
             if (appState.isHost && member.id !== appState.myId) {
+                // --- FIX: Only add a new player if there's room for one ---
+                const playerCount = Object.keys(appState.game.players).length;
+                if (playerCount >= 2) {
+                    console.log("Spectator/Presenter joined. Not adding to game.");
+                    // Send the current state to the new member so they can sync up
+                    broadcastGameState();
+                    return;
+                }
+
                 // A new guest has joined. The host updates the state and broadcasts.
                 const newPlayer = {
                     name: member.info.playerName, // Pusher provides member info
@@ -668,20 +676,23 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.channel.bind('pusher:member_removed', (member) => {
              if (appState.isHost) {
                 console.log('Member removed:', member.id);
-                delete appState.game.players[member.id];
-                if(appState.game.status === 'active') {
-                    appState.game.status = 'paused';
-                    appState.game.timerState.running = false;
+                // Don't remove if it's just a spectator/presenter leaving
+                if (appState.game.players[member.id]) {
+                    delete appState.game.players[member.id];
+                    if(appState.game.status === 'active') {
+                        appState.game.status = 'paused';
+                        appState.game.timerState.running = false;
+                    }
+                    broadcastGameState();
+                    fullRender(); // Force host's screen to update
                 }
-                broadcastGameState();
-                fullRender(); // Force host's screen to update
             }
         });
         
         // This listener is now ONLY for non-host clients
         appState.channel.bind('client-state-update', (data) => {
             if (!appState.isHost) {
-                console.log('Guest received state update:', data);
+                console.log('Guest/Presenter received state update:', data);
                 appState.game = data;
                 
                 if (!appState.game.timerState.running && timerInterval) {
@@ -777,7 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     };
 
-    // --- FIX: New function to handle the actual start of the game ---
     const startGameWithFirstPlayer = (firstPlayerId) => {
         if (!appState.isHost) return;
 
@@ -901,7 +911,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('host-menu-dropdown').classList.toggle('hidden');
     });
 
-    // --- FIX: Modified 'start-game-btn' listener to show the modal ---
     document.getElementById('start-game-btn').addEventListener('click', (e) => {
         e.preventDefault();
         if (!appState.isHost) return;
@@ -916,7 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
 
-    // --- FIX: New listener for the modal buttons ---
     document.getElementById('first-player-options').addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             const firstPlayerId = e.target.dataset.playerId;
