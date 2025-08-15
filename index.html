@@ -739,16 +739,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 const returningPlayerEntry = Object.entries(appState.game.players).find(([id, player]) => player.name === member.info.playerName && !player.connected);
 
                 if (returningPlayerEntry) {
-                    console.log('Player is reconnecting...');
-                    const [oldId, playerData] = returningPlayerEntry;
-                    
-                    delete appState.game.players[oldId];
-                    
-                    playerData.connected = true;
-                    appState.game.players[member.id] = playerData;
+                console.log('Player is reconnecting...');
+                const [oldId, playerData] = returningPlayerEntry;
 
-                    if (appState.game.turn === oldId) {
-                        appState.game.turn = member.id;
+                delete appState.game.players[oldId];
+
+              // --- START FIX ---
+
+            // Rebuild the player object, preserving essential data 
+                // but ALWAYS forcing them to be a guest.
+                appState.game.players[member.id] = {
+                name: playerData.name,
+                prizesTaken: playerData.prizesTaken,
+                isHost: false, // Force guest status on reconnect
+                color: playerData.color,
+                connected: true
+            };
+
+            // --- END FIX ---
+
+            if (appState.game.turn === oldId) {
+            appState.game.turn = member.id;
+    }
+    
+    const allPlayersConnected = Object.values(appState.game.players).every(p => p.connected);
+    if (allPlayersConnected && Object.keys(appState.game.players).length === 2) {
+        appState.game.status = 'active';
+        appState.game.timerState.running = true;
+        startTimer();
                     }
                     
                     const allPlayersConnected = Object.values(appState.game.players).every(p => p.connected);
@@ -1188,4 +1206,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
