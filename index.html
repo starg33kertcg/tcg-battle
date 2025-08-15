@@ -675,7 +675,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Subscribed to channel:', roomCode);
             appState.myId = appState.channel.members.me.id;
             
-            // --- FIX: Logic to handle rejoining and host conflicts ---
             let anotherHostExists = false;
             members.each(member => {
                 if (member.id !== appState.myId && member.info.isHost) {
@@ -691,19 +690,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionData.isHost = false;
                     sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
                 }
+                fullRender();
             }
-
-            if (appState.isHost) {
+            else if (appState.isHost) {
+                console.log("I am the host.");
                 if (Object.keys(appState.game.players).length === 0) {
                     appState.game.players[appState.myId] = { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0], connected: true };
                 }
                 broadcastGameState();
                 fullRender();
             } else {
-                // Guest logic: check if a host is present
+                console.log("I am a guest, checking for a host...");
                 setTimeout(() => {
                     let hostExists = false;
-                    members.each(member => {
+                    appState.channel.members.each(member => {
                         if (member.info.isHost) {
                             hostExists = true;
                         }
@@ -714,7 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         sessionStorage.removeItem('tcgBattleSession');
                         window.location.href = window.location.pathname;
                     }
-                }, 2000);
+                }, 2500);
             }
         });
 
