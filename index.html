@@ -209,6 +209,10 @@
                 <i class="fas fa-trophy text-yellow-400 text-6xl mb-4"></i>
                 <h2 class="text-4xl font-bold mb-2">WINNER!</h2>
                 <p id="winner-name" class="text-3xl font-bangers tracking-wider"></p>
+                <!-- FIX: Added buttons to the winner modal -->
+                <div id="winner-modal-buttons" class="mt-6">
+                    <!-- Buttons will be injected here by JS -->
+                </div>
             </div>
         </div>
 
@@ -322,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         roomCode: null,
         view: 'home', // home, tcgSelection, gameRoom, presenter
         playerName: `Player${Math.floor(Math.random() * 900 + 100)}`,
-        winnerAnnounced: false, // --- FIX: Add a flag to prevent multiple winner animations ---
+        winnerAnnounced: false,
         game: {
             tcg: 'pokemon',
             status: 'waiting', // waiting, active, paused, finished
@@ -605,10 +609,27 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal('chooseFirstPlayerModal');
     };
 
-    // --- FIX: New function to show the winner animation ---
     const showWinnerAnimation = (winner) => {
         if (!winner) return;
         document.getElementById('winner-name').textContent = winner.name;
+        
+        // --- FIX: Add buttons based on player role ---
+        const buttonContainer = document.getElementById('winner-modal-buttons');
+        buttonContainer.innerHTML = '';
+        if (appState.isHost) {
+            const playAgainBtn = document.createElement('button');
+            playAgainBtn.id = 'play-again-btn';
+            playAgainBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
+            playAgainBtn.textContent = 'Play Again';
+            buttonContainer.appendChild(playAgainBtn);
+        } else {
+            const closeBtn = document.createElement('button');
+            closeBtn.id = 'close-winner-btn';
+            closeBtn.className = 'bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded';
+            closeBtn.textContent = 'Close';
+            buttonContainer.appendChild(closeBtn);
+        }
+
         showModal('winnerModal');
         appState.winnerAnnounced = true;
     };
@@ -617,7 +638,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGameRoom();
         renderPresenter();
 
-        // --- FIX: Check for a winner on every render ---
         if (appState.game.status === 'finished' && !appState.winnerAnnounced) {
             const winner = Object.values(appState.game.players).find(p => p.prizesTaken.length >= appState.game.prizeCount);
             if (winner) {
@@ -955,9 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('restart-round-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if(!appState.isHost) return;
+    const restartRound = () => {
         Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
         appState.game.status = 'waiting';
         appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
@@ -965,13 +983,28 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(timerInterval);
             timerInterval = null;
         }
-        // --- FIX: Reset winner flag and hide modal on restart ---
         appState.winnerAnnounced = false;
         hideModal('winnerModal');
         broadcastGameState();
         fullRender();
+    };
+
+    document.getElementById('restart-round-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if(!appState.isHost) return;
+        restartRound();
         document.getElementById('host-menu-dropdown').classList.add('hidden');
     });
+
+    // --- FIX: Event listener for the new winner modal buttons ---
+    document.getElementById('winner-modal-buttons').addEventListener('click', (e) => {
+        if (e.target.id === 'play-again-btn' && appState.isHost) {
+            restartRound();
+        } else if (e.target.id === 'close-winner-btn' && !appState.isHost) {
+            hideModal('winnerModal');
+        }
+    });
+
     document.getElementById('end-session-btn').addEventListener('click', (e) => {
         e.preventDefault();
         if(!appState.isHost) return;
