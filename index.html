@@ -747,6 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     playerData.connected = true;
                     appState.game.players[member.id] = playerData;
 
+                    // --- FIX: Update the turn to the new player ID if they were the active player ---
                     if (appState.game.turn === oldId) {
                         appState.game.turn = member.id;
                     }
