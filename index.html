@@ -800,16 +800,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const myPlayerData = appState.game.players[appState.myId];
                     myPlayerData.isHost = true;
-                    
-                    delete appState.game.players[member.id];
-                    myPlayerData.connected = true;
+                    myPlayerData.connected = true; // Ensure I am marked as connected
 
-                    if (appState.game.status === 'paused') {
-                        appState.game.status = 'active';
-                        appState.game.timerState.running = true;
-                        startTimer();
-                    }
-                    
+                    // --- START FIX ---
+
+                    // 1. Mark the old host as disconnected INSTEAD of deleting them.
+                    // This preserves their prize data and allows them to be found on reconnect.
+                    removedPlayer.connected = false; 
+
+                    // 2. Pause the game, because a player has disconnected.
+                    appState.game.status = 'paused';
+                    appState.game.timerState.running = false;
+
+                    // --- END FIX ---
+ 
                     broadcastGameState();
                     fullRender();
                 }
@@ -1184,3 +1188,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
