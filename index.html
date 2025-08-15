@@ -243,7 +243,6 @@
                 <div id="game-controls" class="hidden w-full max-w-lg text-center">
                     <div id="game-status-info" class="mb-4 py-6 px-3 bg-gray-900 rounded-lg">
                          <p id="game-status-text" class="text-xl font-bold text-yellow-400"></p>
-                         <!-- FIX: Increased top margin from mt-2 to mt-4 -->
                          <div id="player-turn-info" class="flex justify-around items-center mt-4 px-4">
                              <div id="player1-turn-indicator" class="p-2 rounded-lg">
                                  <p id="player1-name-turn" class="font-bold"></p>
@@ -323,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         roomCode: null,
         view: 'home', // home, tcgSelection, gameRoom, presenter
         playerName: `Player${Math.floor(Math.random() * 900 + 100)}`,
+        winnerAnnounced: false, // --- FIX: Add a flag to prevent multiple winner animations ---
         game: {
             tcg: 'pokemon',
             status: 'waiting', // waiting, active, paused, finished
@@ -605,9 +605,25 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal('chooseFirstPlayerModal');
     };
 
+    // --- FIX: New function to show the winner animation ---
+    const showWinnerAnimation = (winner) => {
+        if (!winner) return;
+        document.getElementById('winner-name').textContent = winner.name;
+        showModal('winnerModal');
+        appState.winnerAnnounced = true;
+    };
+
     const fullRender = () => {
         renderGameRoom();
         renderPresenter();
+
+        // --- FIX: Check for a winner on every render ---
+        if (appState.game.status === 'finished' && !appState.winnerAnnounced) {
+            const winner = Object.values(appState.game.players).find(p => p.prizesTaken.length >= appState.game.prizeCount);
+            if (winner) {
+                showWinnerAnimation(winner);
+            }
+        }
     };
 
     // --- PUSHER LOGIC ---
@@ -949,6 +965,9 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(timerInterval);
             timerInterval = null;
         }
+        // --- FIX: Reset winner flag and hide modal on restart ---
+        appState.winnerAnnounced = false;
+        hideModal('winnerModal');
         broadcastGameState();
         fullRender();
         document.getElementById('host-menu-dropdown').classList.add('hidden');
