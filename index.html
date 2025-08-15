@@ -209,7 +209,6 @@
                 <i class="fas fa-trophy text-yellow-400 text-6xl mb-4"></i>
                 <h2 class="text-4xl font-bold mb-2">WINNER!</h2>
                 <p id="winner-name" class="text-3xl font-bangers tracking-wider"></p>
-                <!-- FIX: Added buttons to the winner modal -->
                 <div id="winner-modal-buttons" class="mt-6">
                     <!-- Buttons will be injected here by JS -->
                 </div>
@@ -227,13 +226,9 @@
                     <h1 class="text-2xl font-bangers text-yellow-400 logo-text tracking-wider">TCG BATTLE!</h1>
                 </div>
                 <div class="relative">
-                    <button id="host-menu-btn" class="hidden p-2"><i class="fas fa-bars fa-lg"></i></button>
-                    <div id="host-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-20">
-                        <a href="#" id="start-game-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-blue-500 hover:text-white">Start Game</a>
-                        <a href="#" id="restart-round-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-yellow-500 hover:text-white">Restart Round</a>
-                        <a href="#" id="kick-guest-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-orange-500 hover:text-white">Kick Guest</a>
-                        <a href="#" id="end-session-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">End Session</a>
-                        <a href="#" id="open-presenter-btn" target="_blank" class="block px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</a>
+                    <button id="game-menu-btn" class="p-2"><i class="fas fa-bars fa-lg"></i></button>
+                    <div id="game-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-20">
+                        <!-- Menu items will be injected here -->
                     </div>
                 </div>
             </header>
@@ -407,9 +402,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('room-code-display').textContent = appState.roomCode;
         document.getElementById('player-role').textContent = isHost ? 'You are the Host' : 'You are the Guest';
-        document.getElementById('host-menu-btn').classList.toggle('hidden', !isHost);
-        const presenterLink = document.getElementById('open-presenter-btn');
-        presenterLink.href = `?presenter=${appState.roomCode}`;
+        
+        // --- FIX: Render menu based on role ---
+        const menuDropdown = document.getElementById('game-menu-dropdown');
+        menuDropdown.innerHTML = ''; // Clear old items
+        if (isHost) {
+            menuDropdown.innerHTML = `
+                <a href="#" id="start-game-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-blue-500 hover:text-white">Start Game</a>
+                <a href="#" id="restart-round-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-yellow-500 hover:text-white">Restart Round</a>
+                <a href="#" id="kick-guest-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-orange-500 hover:text-white">Kick Guest</a>
+                <a href="#" id="end-session-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">End Session</a>
+                <a href="#" id="open-presenter-btn" target="_blank" class="block px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</a>
+            `;
+            document.getElementById('open-presenter-btn').href = `?presenter=${appState.roomCode}`;
+        } else {
+             menuDropdown.innerHTML = `<a href="#" id="leave-battle-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">Leave Battle</a>`;
+        }
+
 
         const me = game.players[myId];
         if (!me) {
@@ -613,7 +622,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!winner) return;
         document.getElementById('winner-name').textContent = winner.name;
         
-        // --- FIX: Add buttons based on player role ---
         const buttonContainer = document.getElementById('winner-modal-buttons');
         buttonContainer.innerHTML = '';
         if (appState.isHost) {
@@ -673,6 +681,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 broadcastGameState();
                 fullRender();
+            } else {
+                // --- FIX: Guest checks if host exists ---
+                setTimeout(() => {
+                    const hostExists = members.some(m => m.info.isHost);
+                    if (!hostExists) {
+                        alert("Room not found or host has left. Returning to home.");
+                        sessionStorage.removeItem('tcgBattleSession');
+                        window.location.href = window.location.pathname;
+                    }
+                }, 2000);
             }
         });
 
@@ -947,22 +965,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    document.getElementById('host-menu-btn').addEventListener('click', () => {
-        document.getElementById('host-menu-dropdown').classList.toggle('hidden');
+    
+    // --- FIX: Consolidated menu logic into a single listener ---
+    document.getElementById('game-menu-dropdown').addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = e.target.id;
+
+        if (targetId === 'start-game-btn') {
+            const pIds = Object.keys(appState.game.players);
+            if (pIds.length < 2) {
+                console.error("Cannot start, waiting for a guest to join.");
+                return;
+            }
+            renderChooseFirstPlayerModal();
+        } else if (targetId === 'restart-round-btn') {
+            restartRound();
+        } else if (targetId === 'kick-guest-btn') {
+            const guestId = Object.keys(appState.game.players).find(id => !appState.game.players[id].isHost);
+            if(guestId) {
+                appState.channel.trigger('client-player-leave', {id: guestId});
+                delete appState.game.players[guestId];
+                broadcastGameState();
+            }
+        } else if (targetId === 'end-session-btn') {
+            appState.channel.trigger('client-session-ended', {});
+            setTimeout(() => {
+                sessionStorage.removeItem('tcgBattleSession');
+                localStorage.removeItem(`tcgBattleState-${appState.roomCode}`);
+                window.location.href = window.location.pathname;
+            }, 500);
+        } else if (targetId === 'leave-battle-btn') {
+            sessionStorage.removeItem('tcgBattleSession');
+            window.location.href = window.location.pathname;
+        }
+
+        document.getElementById('game-menu-dropdown').classList.add('hidden');
     });
 
-    document.getElementById('start-game-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if (!appState.isHost) return;
-        const pIds = Object.keys(appState.game.players);
-        if (pIds.length < 2) {
-            console.error("Cannot start, waiting for a guest to join.");
-            return;
-        }
-        
-        renderChooseFirstPlayerModal();
-
-        document.getElementById('host-menu-dropdown').classList.add('hidden');
+    document.getElementById('game-menu-btn').addEventListener('click', () => {
+        document.getElementById('game-menu-dropdown').classList.toggle('hidden');
     });
 
     document.getElementById('first-player-options').addEventListener('click', (e) => {
@@ -989,14 +1030,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fullRender();
     };
 
-    document.getElementById('restart-round-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if(!appState.isHost) return;
-        restartRound();
-        document.getElementById('host-menu-dropdown').classList.add('hidden');
-    });
-
-    // --- FIX: Event listener for the new winner modal buttons ---
     document.getElementById('winner-modal-buttons').addEventListener('click', (e) => {
         if (e.target.id === 'play-again-btn' && appState.isHost) {
             restartRound();
@@ -1005,27 +1038,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('end-session-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if(!appState.isHost) return;
-        appState.channel.trigger('client-session-ended', {});
-        setTimeout(() => {
-            sessionStorage.removeItem('tcgBattleSession');
-            localStorage.removeItem(`tcgBattleState-${appState.roomCode}`);
-            window.location.href = window.location.pathname
-        }, 500);
-    });
-    document.getElementById('kick-guest-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if(!appState.isHost) return;
-        const guestId = Object.keys(appState.game.players).find(id => !appState.game.players[id].isHost);
-        if(guestId) {
-            appState.channel.trigger('client-player-leave', {id: guestId});
-            delete appState.game.players[guestId];
-            broadcastGameState();
-        }
-        document.getElementById('host-menu-dropdown').classList.add('hidden');
-    });
     document.body.addEventListener('click', (e) => {
         if (e.target.id === 'end-turn-btn') {
             const pIds = Object.keys(appState.game.players);
@@ -1040,8 +1052,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
             }
         }
-        if (document.getElementById('host-menu-dropdown') && !document.getElementById('host-menu-btn').contains(e.target) && !document.getElementById('host-menu-dropdown').contains(e.target)) {
-            document.getElementById('host-menu-dropdown').classList.add('hidden');
+        if (document.getElementById('game-menu-dropdown') && !document.getElementById('game-menu-btn').contains(e.target) && !document.getElementById('game-menu-dropdown').contains(e.target)) {
+            document.getElementById('game-menu-dropdown').classList.add('hidden');
         }
     });
     const fullscreenBtn = document.getElementById('fullscreen-btn');
