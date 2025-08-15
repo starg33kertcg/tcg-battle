@@ -697,11 +697,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Object.keys(appState.game.players).length === 0) {
                     appState.game.players[appState.myId] = { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0], connected: true };
                 }
+                
+                if(appState.game.players[appState.myId]) {
+                    appState.game.players[appState.myId].connected = true;
+                }
+
                 broadcastGameState();
                 fullRender();
             } else {
-                console.log("I am a guest, checking for a host...");
-                setTimeout(() => {
+                console.log("I am a guest, waiting for host state...");
+                const roomCheckTimeout = setTimeout(() => {
                     let hostExists = false;
                     appState.channel.members.each(member => {
                         if (member.info.isHost) {
@@ -714,7 +719,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         sessionStorage.removeItem('tcgBattleSession');
                         window.location.href = window.location.pathname;
                     }
-                }, 2500);
+                }, 3000);
+
+                appState.roomCheckTimeout = roomCheckTimeout;
             }
         });
 
@@ -804,6 +811,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         appState.channel.bind('client-state-update', (data) => {
             if (!appState.isHost) {
+                if (appState.roomCheckTimeout) {
+                    console.log("Received host state, cancelling room check timeout.");
+                    clearTimeout(appState.roomCheckTimeout);
+                    appState.roomCheckTimeout = null;
+                }
+
                 console.log('Guest/Presenter received state update:', data);
                 appState.game = data;
                 
