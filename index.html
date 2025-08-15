@@ -403,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('room-code-display').textContent = appState.roomCode;
         document.getElementById('player-role').textContent = isHost ? 'You are the Host' : 'You are the Guest';
         
-        // --- FIX: Render menu based on role ---
         const menuDropdown = document.getElementById('game-menu-dropdown');
         menuDropdown.innerHTML = ''; // Clear old items
         if (isHost) {
@@ -682,9 +681,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 broadcastGameState();
                 fullRender();
             } else {
-                // --- FIX: Guest checks if host exists ---
+                // --- FIX: Correctly check if host exists ---
                 setTimeout(() => {
-                    const hostExists = members.some(m => m.info.isHost);
+                    let hostExists = false;
+                    members.each(member => {
+                        if (member.info.isHost) {
+                            hostExists = true;
+                        }
+                    });
+
                     if (!hostExists) {
                         alert("Room not found or host has left. Returning to home.");
                         sessionStorage.removeItem('tcgBattleSession');
@@ -966,7 +971,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // --- FIX: Consolidated menu logic into a single listener ---
     document.getElementById('game-menu-dropdown').addEventListener('click', (e) => {
         e.preventDefault();
         const targetId = e.target.id;
