@@ -1,14 +1,13 @@
 const Pusher = require('pusher');
 
 exports.handler = async (event) => {
-  // The user's name is sent from the client in the request body.
-  // The body needs to be parsed from the event.
+  // The user's info is sent from the client in the request body.
   const params = new URLSearchParams(event.body);
   const socket_id = params.get('socket_id');
   const channel_name = params.get('channel_name');
-  
-  // We also pass the playerName in the auth request from the client
   const playerName = params.get('playerName') || 'A new player';
+  // --- FIX: Get the isHost status from the client ---
+  const isHost = params.get('isHost') === 'true';
 
   // IMPORTANT: You must set these as Environment Variables in your Netlify dashboard
   const pusher = new Pusher({
@@ -24,7 +23,9 @@ exports.handler = async (event) => {
   const presence_data = {
       user_id: user_id,
       user_info: {
-          playerName: playerName 
+          playerName: playerName,
+          // --- FIX: Include isHost in the user's info for the presence channel ---
+          isHost: isHost 
       }
   };
 
