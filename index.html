@@ -96,8 +96,7 @@
                 <button id="join-session-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105">Join an existing battle</button>
             </div>
             <div class="absolute bottom-4 text-xs text-gray-500">
-                <p>This app uses Pusher for real-time events.</p>
-                <p>You'll need a free API key to connect players.</p>
+                <p>This app is under active development. Expect bugs and glitches.</p>
             </div>
         </section>
 
@@ -244,7 +243,8 @@
                 <div id="game-controls" class="hidden w-full max-w-lg text-center">
                     <div id="game-status-info" class="mb-4 p-3 bg-gray-900 rounded-lg">
                          <p id="game-status-text" class="text-xl font-bold text-yellow-400"></p>
-                         <div id="player-turn-info" class="flex justify-around items-center mt-2">
+                         <!-- FIX: Added padding to the container -->
+                         <div id="player-turn-info" class="flex justify-around items-center mt-2 px-4">
                              <div id="player1-turn-indicator" class="p-2 rounded-lg">
                                  <p id="player1-name-turn" class="font-bold"></p>
                              </div>
@@ -416,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const connectedPlayerCount = Object.values(game.players).filter(p => p.connected).length;
         
-        // --- FIX: Show correct message based on game status ---
         if (game.status === 'paused') {
              document.getElementById('waiting-for-opponent').style.display = 'none';
              document.getElementById('game-controls').style.display = 'block';
@@ -664,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (allPlayersConnected && Object.keys(appState.game.players).length === 2) {
                         appState.game.status = 'active';
                         appState.game.timerState.running = true;
-                        startTimer(); // --- FIX: Resume timer on reconnect ---
+                        startTimer();
                     }
                 } else if (Object.keys(appState.game.players).length < 2) {
                     console.log('New player is joining...');
