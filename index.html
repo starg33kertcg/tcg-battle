@@ -675,24 +675,29 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Subscribed to channel:', roomCode);
             appState.myId = appState.channel.members.me.id;
             
-            let anotherHostExists = false;
-            members.each(member => {
-                if (member.id !== appState.myId && member.info.isHost) {
-                    anotherHostExists = true;
-                }
-            });
+            let wasDemoted = false;
+            if (appState.isHost) {
+                let anotherHostExists = false;
+                members.each(member => {
+                    if (member.id !== appState.myId && member.info.isHost) {
+                        anotherHostExists = true;
+                    }
+                });
 
-            if (appState.isHost && anotherHostExists) {
-                console.warn("Another host found. Demoting self to guest.");
-                appState.isHost = false;
-                const sessionData = JSON.parse(sessionStorage.getItem('tcgBattleSession'));
-                if (sessionData) {
-                    sessionData.isHost = false;
-                    sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
+                if (anotherHostExists) {
+                    console.warn("Another host found. Demoting self to guest.");
+                    appState.isHost = false;
+                    wasDemoted = true;
+                    const sessionData = JSON.parse(sessionStorage.getItem('tcgBattleSession'));
+                    if (sessionData) {
+                        sessionData.isHost = false;
+                        sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
+                    }
+                    fullRender();
                 }
-                fullRender();
             }
-            else if (appState.isHost) {
+
+            if (appState.isHost) {
                 console.log("I am the host.");
                 if (Object.keys(appState.game.players).length === 0) {
                     appState.game.players[appState.myId] = { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0], connected: true };
@@ -706,22 +711,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 fullRender();
             } else {
                 console.log("I am a guest, waiting for host state...");
-                const roomCheckTimeout = setTimeout(() => {
-                    let hostExists = false;
-                    appState.channel.members.each(member => {
-                        if (member.info.isHost) {
-                            hostExists = true;
+                if (!wasDemoted) {
+                    const roomCheckTimeout = setTimeout(() => {
+                        let hostExists = false;
+                        appState.channel.members.each(member => {
+                            if (member.info.isHost) {
+                                hostExists = true;
+                            }
+                        });
+
+                        if (!hostExists) {
+                            alert("Room not found or host has left. Returning to home.");
+                            sessionStorage.removeItem('tcgBattleSession');
+                            window.location.href = window.location.pathname;
                         }
-                    });
+                    }, 3000);
 
-                    if (!hostExists) {
-                        alert("Room not found or host has left. Returning to home.");
-                        sessionStorage.removeItem('tcgBattleSession');
-                        window.location.href = window.location.pathname;
-                    }
-                }, 3000);
-
-                appState.roomCheckTimeout = roomCheckTimeout;
+                    appState.roomCheckTimeout = roomCheckTimeout;
+                }
             }
         });
 
