@@ -660,7 +660,8 @@ document.addEventListener('DOMContentLoaded', () => {
             authEndpoint: '/.netlify/functions/pusher-auth',
             auth: {
                 params: {
-                    playerName: appState.playerName
+                    playerName: appState.playerName,
+                    isHost: appState.isHost
                 }
             }
         });
@@ -681,7 +682,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 broadcastGameState();
                 fullRender();
             } else {
-                // --- FIX: Correctly check if host exists ---
                 setTimeout(() => {
                     let hostExists = false;
                     members.each(member => {
