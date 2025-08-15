@@ -347,7 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (PUSHER_APP_KEY === 'YOUR_PUSHER_APP_KEY' || PUSHER_CLUSTER === 'YOUR_PUSHER_CLUSTER') {
         console.warn("Pusher key not set. Real-time features will not work.");
-        // Replaced alert with a less intrusive console message
     }
 
     // --- DOM ELEMENTS ---
@@ -415,9 +414,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const opponentCount = Object.values(game.players).filter(p => p.connected).length;
-        document.getElementById('waiting-for-opponent').style.display = opponentCount < 2 ? 'block' : 'none';
-        document.getElementById('game-controls').style.display = opponentCount >= 2 ? 'block' : 'none';
+        const connectedPlayerCount = Object.values(game.players).filter(p => p.connected).length;
+        
+        // --- FIX: Show correct message based on game status ---
+        if (game.status === 'paused') {
+             document.getElementById('waiting-for-opponent').style.display = 'none';
+             document.getElementById('game-controls').style.display = 'block';
+        } else {
+            document.getElementById('waiting-for-opponent').style.display = connectedPlayerCount < 2 ? 'block' : 'none';
+            document.getElementById('game-controls').style.display = connectedPlayerCount >= 2 ? 'block' : 'none';
+        }
+
 
         const prizeGrid = document.getElementById('prize-card-grid');
         prizeGrid.innerHTML = '';
@@ -657,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (allPlayersConnected && Object.keys(appState.game.players).length === 2) {
                         appState.game.status = 'active';
                         appState.game.timerState.running = true;
+                        startTimer(); // --- FIX: Resume timer on reconnect ---
                     }
                 } else if (Object.keys(appState.game.players).length < 2) {
                     console.log('New player is joining...');
