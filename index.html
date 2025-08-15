@@ -675,6 +675,24 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Subscribed to channel:', roomCode);
             appState.myId = appState.channel.members.me.id;
             
+            // --- FIX: Logic to handle rejoining and host conflicts ---
+            let anotherHostExists = false;
+            members.each(member => {
+                if (member.id !== appState.myId && member.info.isHost) {
+                    anotherHostExists = true;
+                }
+            });
+
+            if (appState.isHost && anotherHostExists) {
+                console.warn("Another host found. Demoting self to guest.");
+                appState.isHost = false;
+                const sessionData = JSON.parse(sessionStorage.getItem('tcgBattleSession'));
+                if (sessionData) {
+                    sessionData.isHost = false;
+                    sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
+                }
+            }
+
             if (appState.isHost) {
                 if (Object.keys(appState.game.players).length === 0) {
                     appState.game.players[appState.myId] = { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0], connected: true };
@@ -682,6 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 broadcastGameState();
                 fullRender();
             } else {
+                // Guest logic: check if a host is present
                 setTimeout(() => {
                     let hostExists = false;
                     members.each(member => {
@@ -691,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     if (!hostExists) {
-                        alert("Room not found. Returning to home.");
+                        alert("Room not found or host has left. Returning to home.");
                         sessionStorage.removeItem('tcgBattleSession');
                         window.location.href = window.location.pathname;
                     }
@@ -754,11 +773,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     fullRender();
                 }
             } else {
-                // --- FIX: Guest becomes host if the host disconnects ---
                 const removedPlayer = appState.game.players[member.id];
                 if (removedPlayer && removedPlayer.isHost) {
                     console.log("Host disconnected. Guest is becoming the new host.");
                     appState.isHost = true;
+                    
+                    const sessionData = JSON.parse(sessionStorage.getItem('tcgBattleSession'));
+                    if (sessionData) {
+                        sessionData.isHost = true;
+                        sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
+                    }
                     
                     const myPlayerData = appState.game.players[appState.myId];
                     myPlayerData.isHost = true;
@@ -766,9 +790,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     delete appState.game.players[member.id];
                     myPlayerData.connected = true;
 
-                    appState.game.status = 'active';
-                    appState.game.timerState.running = true;
-                    startTimer();
+                    if (appState.game.status === 'paused') {
+                        appState.game.status = 'active';
+                        appState.game.timerState.running = true;
+                        startTimer();
+                    }
+                    
                     broadcastGameState();
                     fullRender();
                 }
