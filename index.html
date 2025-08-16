@@ -706,6 +706,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     appState.roomCheckTimeout = roomCheckTimeout;
                 }
             }
+            
+            if (appState.isHost) {
+                bindHostEvents();
+            }
         });
 
         appState.channel.bind('pusher:member_added', (member) => {
@@ -720,9 +724,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     delete appState.game.players[oldId];
 
-                    // --- START FIX ---
-                    // Rebuild the player object, preserving essential data 
-                    // but ALWAYS forcing them to be a guest.
                     appState.game.players[member.id] = {
                         name: playerData.name,
                         prizesTaken: playerData.prizesTaken,
@@ -730,7 +731,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         color: playerData.color,
                         connected: true
                     };
-                    // --- END FIX ---
 
                     if (appState.game.turn === oldId) {
                         appState.game.turn = member.id;
@@ -785,17 +785,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const myPlayerData = appState.game.players[appState.myId];
                     myPlayerData.isHost = true;
-                    myPlayerData.connected = true; // Ensure I am marked as connected
+                    myPlayerData.connected = true;
 
-                    // --- START FIX ---
-                    // 1. Mark the old host as disconnected INSTEAD of deleting them.
-                    // This preserves their prize data and allows them to be found on reconnect.
                     removedPlayer.connected = false; 
 
-                    // 2. Pause the game, because a player has disconnected.
                     appState.game.status = 'paused';
                     appState.game.timerState.running = false;
-                    // --- END FIX ---
                     
                     broadcastGameState();
                     fullRender();
@@ -829,10 +824,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('The host has ended the session.');
             window.location.href = window.location.pathname;
         });
-
-        if (appState.isHost) {
-            bindHostEvents();
-        }
     };
 
     const broadcastGameState = () => {
@@ -844,6 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Pusher trigger failed:", error);
         }
     };
+
     const bindHostEvents = () => {
         if (!appState.channel) return;
 
@@ -877,6 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("Host events have been successfully bound.");
     };
+    
     let timerInterval;
     const startTimer = () => {
         if (timerInterval) clearInterval(timerInterval);
@@ -1108,26 +1101,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('click', (e) => {
         if (e.target.id === 'end-turn-btn') {
-            // --- DEBUGGING START ---
-            console.log("--- 'End Turn' button clicked ---");
-            console.log("My current role (isHost):", appState.isHost);
-            console.log("My user ID:", appState.myId);
-            console.log("Whose turn is it?", appState.game.turn);
-            // --- DEBUGGING END ---
-
             const pIds = Object.keys(appState.game.players);
             const myId = appState.myId;
             const otherPlayerId = pIds.find(id => id !== myId);
             
             if (appState.isHost) {
-                console.log("Action: Running HOST end-turn logic.");
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
                 fullRender();
             } else {
-                console.log("Action: Triggering 'client-end-turn' to pass turn to:", otherPlayerId);
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
-                console.log("Action: Event sent.");
             }
         }
         if (document.getElementById('game-menu-dropdown') && !document.getElementById('game-menu-btn').contains(e.target) && !document.getElementById('game-menu-dropdown').contains(e.target)) {
@@ -1192,4 +1175,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
