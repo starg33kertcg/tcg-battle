@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCG Battle!</title>
+    <link rel="icon" type="image/png" href="https://tcgbattle.netlify.app/images/tcg_battle_logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -82,8 +83,8 @@
     <div id="app" class="relative min-h-screen">
 
         <section id="home-view" class="hidden min-h-screen flex flex-col items-center justify-center p-4 text-center">
-            <div class="mb-8">
-                <h1 class="text-7xl sm:text-8xl md:text-9xl font-bangers text-yellow-400 logo-text tracking-wider">TCG BATTLE!</h1>
+            <div class="mb-8 w-full max-w-lg">
+                <img src="https://tcgbattle.netlify.app/images/tcg_battle_logo.png" alt="TCG Battle Logo" class="w-full h-auto">
             </div>
             <div class="space-y-4 w-full max-w-xs">
                 <button id="create-session-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105">Create a new battle</button>
@@ -208,7 +209,7 @@
                     <p id="player-role" class="font-bold"></p>
                 </div>
                 <div class="text-center">
-                    <h1 class="text-2xl font-bangers text-yellow-400 logo-text tracking-wider">TCG BATTLE!</h1>
+                    <img src="https://tcgbattle.netlify.app/images/tcg_battle_logo.png" alt="TCG Battle Logo" class="h-10 mx-auto">
                 </div>
                 <div class="relative">
                     <button id="game-menu-btn" class="p-2"><i class="fas fa-bars fa-lg"></i></button>
@@ -257,7 +258,7 @@
                     </div>
                     
                     <div class="flex-shrink-0 mx-8">
-                         <h1 class="text-6xl md:text-8xl font-bangers text-yellow-400 logo-text tracking-wider">TCG<br>BATTLE!</h1>
+                        <img src="https://tcgbattle.netlify.app/images/tcg_battle_logo.png" alt="TCG Battle Logo" class="w-64 md:w-80">
                     </div>
 
                     <div id="presenter-p2-side" class="flex-1 flex flex-col items-center">
@@ -450,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (game.status === 'active') statusText = "Game in progress!";
         if (game.status === 'paused') statusText = "Game Paused - Opponent Disconnected";
         if (game.status === 'finished') {
-            const winner = Object.values(game.players).find(p => p.prizesTaken.length >= game.prizeCount);
+            const winner = Object.values(game.players).find(p => p.prizesTaken.length >= appState.game.prizeCount);
             statusText = winner ? `Game Over! ${winner.name} wins!` : "Game Over!";
         }
         document.getElementById('game-status-text').textContent = statusText;
