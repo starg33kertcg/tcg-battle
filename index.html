@@ -799,6 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     broadcastGameState();
                     fullRender();
+                    bindHostEvents();
                 }
             }
         });
@@ -830,29 +831,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (appState.isHost) {
-            appState.channel.bind('client-update-prizes', (data, metadata) => {
-                const playerId = metadata.user_id;
-                if (appState.game.players[playerId]) {
-                    appState.game.players[playerId].prizesTaken = data.prizes;
-                    
-                    if (data.prizes.length >= appState.game.prizeCount) {
-                        appState.game.status = 'finished';
-                        appState.game.timerState.running = false;
-                        playBuzzer();
-                    }
-                    broadcastGameState();
-                    fullRender();
-                }
-            });
-
-            appState.channel.bind('client-end-turn', (data, metadata) => {
-                const playerId = metadata.user_id;
-                if (appState.game.turn === playerId) {
-                    appState.game.turn = data.turn;
-                    broadcastGameState();
-                    fullRender();
-                }
-            });
+            bindHostEvents();
         }
     };
 
@@ -865,7 +844,39 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Pusher trigger failed:", error);
         }
     };
-    
+    const bindHostEvents = () => {
+        if (!appState.channel) return;
+
+        // Unbind first to prevent duplicates if this function is ever called more than once.
+        appState.channel.unbind('client-update-prizes');
+        appState.channel.unbind('client-end-turn');
+
+        appState.channel.bind('client-update-prizes', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].prizesTaken = data.prizes;
+                
+                if (data.prizes.length >= appState.game.prizeCount) {
+                    appState.game.status = 'finished';
+                    appState.game.timerState.running = false;
+                    playBuzzer();
+                }
+                broadcastGameState();
+                fullRender();
+            }
+        });
+
+        appState.channel.bind('client-end-turn', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.turn === playerId) {
+                appState.game.turn = data.turn;
+                broadcastGameState();
+                fullRender();
+            }
+        });
+
+        console.log("Host events have been successfully bound.");
+    };
     let timerInterval;
     const startTimer = () => {
         if (timerInterval) clearInterval(timerInterval);
@@ -1181,5 +1192,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
