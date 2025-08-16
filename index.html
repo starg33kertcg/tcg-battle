@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
             html = `<p class="text-4xl font-bold tabular-nums">${formatTime(timeRemaining)}</p>`;
         } else {
             const p1Id = Object.keys(appState.game.players).find(id => appState.game.players[id].isHost);
-            const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
+            const p2Id = Object.keys(appState.game.players).find(id => !appState.game.players[id].isHost);
             const p1Time = timerState.playerTimes[p1Id] ?? (appState.game.chessMinutes * 60000);
             const p2Time = timerState.playerTimes[p2Id] ?? (appState.game.chessMinutes * 60000);
             html = `
@@ -1143,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.playerName = sessionData.playerName;
             
             if (sessionData.isHost) {
-                const savedGameState = localStorage.getItem(`tcgBattleState-${sessionData.roomCode}`);
+                const savedGameState = localStorage.getItem(`tcgBattleState-${appState.roomCode}`);
                 if (savedGameState) {
                     appState.game = JSON.parse(savedGameState);
                 }
