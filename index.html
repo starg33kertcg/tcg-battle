@@ -1097,16 +1097,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('click', (e) => {
         if (e.target.id === 'end-turn-btn') {
+            // --- DEBUGGING START ---
+            console.log("--- 'End Turn' button clicked ---");
+            console.log("My current role (isHost):", appState.isHost);
+            console.log("My user ID:", appState.myId);
+            console.log("Whose turn is it?", appState.game.turn);
+            // --- DEBUGGING END ---
+
             const pIds = Object.keys(appState.game.players);
             const myId = appState.myId;
             const otherPlayerId = pIds.find(id => id !== myId);
             
             if (appState.isHost) {
+                console.log("Action: Running HOST end-turn logic.");
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
                 fullRender();
             } else {
+                console.log("Action: Triggering 'client-end-turn' to pass turn to:", otherPlayerId);
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
+                console.log("Action: Event sent.");
             }
         }
         if (document.getElementById('game-menu-dropdown') && !document.getElementById('game-menu-btn').contains(e.target) && !document.getElementById('game-menu-dropdown').contains(e.target)) {
@@ -1171,4 +1181,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
