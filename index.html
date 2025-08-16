@@ -78,7 +78,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-800 text-gray-100">
+<body class="text-gray-100" style="background-color: #1a1a2e;">
 
     <div id="app" class="relative min-h-screen">
 
@@ -249,7 +249,7 @@
             </main>
         </section>
 
-        <section id="presenter-view" class="hidden min-h-screen flex flex-col items-center justify-center bg-blue-900 p-4" style="background-color: #0c4a6e;">
+        <section id="presenter-view" class="hidden min-h-screen flex flex-col items-center justify-center p-4" style="background-color: #000000;">
             <div id="presenter-board" class="w-full max-w-7xl mx-auto relative">
                 <div class="flex justify-between items-center">
                     <div id="presenter-p1-side" class="flex-1 flex flex-col items-center">
@@ -498,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isMyTurn = appState.myId === appState.game.turn;
         const button = document.createElement('button');
         button.id = 'end-turn-btn';
-        button.className = 'w-full max-w-xs bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
+        button.className = 'w-full max-w-xs bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
         button.textContent = 'End Turn';
         button.disabled = !isMyTurn;
         controlsContainer.appendChild(button);
