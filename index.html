@@ -731,6 +731,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         color: playerData.color,
                         connected: true
                     };
+                    
+                    // --- FIX FOR CHESS TIMER ---
+                    if (appState.game.timerType === 'chess') {
+                        // Preserve the player's remaining time
+                        const oldTime = appState.game.timerState.playerTimes[oldId];
+                        if (oldTime !== undefined) {
+                            appState.game.timerState.playerTimes[member.id] = oldTime;
+                            delete appState.game.timerState.playerTimes[oldId];
+                        }
+                    }
+                    // --- END FIX ---
 
                     if (appState.game.turn === oldId) {
                         appState.game.turn = member.id;
