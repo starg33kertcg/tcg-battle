@@ -244,7 +244,7 @@
                         </div>
                     
                     <div id="turn-controls" class="mt-4">
-    </div>
+                    </div>
                 </div>
             </main>
         </section>
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('game-status-text').textContent = statusText;
 
         renderTimerDisplay();
-        renderChessControls();
+        renderActionButtons();
     };
 
     const renderTimerDisplay = () => {
@@ -490,18 +490,31 @@ document.addEventListener('DOMContentLoaded', () => {
         timerDisplay.innerHTML = html;
     };
     
-    const renderChessControls = () => {
+    const renderActionButtons = () => {
         const controlsContainer = document.getElementById('turn-controls');
         controlsContainer.innerHTML = '';
         if (appState.game.status !== 'active') return;
 
         const isMyTurn = appState.myId === appState.game.turn;
-        const button = document.createElement('button');
-        button.id = 'end-turn-btn';
-        button.className = 'w-full max-w-xs bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
-        button.textContent = 'End Turn';
-        button.disabled = !isMyTurn;
-        controlsContainer.appendChild(button);
+
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.className = 'flex items-center justify-center space-x-4';
+
+        const endTurnBtn = document.createElement('button');
+        endTurnBtn.id = 'end-turn-btn';
+        endTurnBtn.className = 'flex-grow bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
+        endTurnBtn.textContent = 'End Turn';
+        endTurnBtn.disabled = !isMyTurn;
+
+        const scoopBtn = document.createElement('button');
+        scoopBtn.id = 'scoop-btn';
+        scoopBtn.className = 'flex-shrink-0 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
+        scoopBtn.textContent = 'SCOOP!';
+        scoopBtn.disabled = appState.game.status !== 'active';
+
+        buttonWrapper.appendChild(endTurnBtn);
+        buttonWrapper.appendChild(scoopBtn);
+        controlsContainer.appendChild(buttonWrapper);
     };
 
     const renderPresenter = () => {
@@ -733,16 +746,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         connected: true
                     };
                     
-                    // --- FIX FOR CHESS TIMER ---
                     if (appState.game.timerType === 'chess') {
-                        // Preserve the player's remaining time
                         const oldTime = appState.game.timerState.playerTimes[oldId];
                         if (oldTime !== undefined) {
                             appState.game.timerState.playerTimes[member.id] = oldTime;
                             delete appState.game.timerState.playerTimes[oldId];
                         }
                     }
-                    // --- END FIX ---
 
                     if (appState.game.turn === oldId) {
                         appState.game.turn = member.id;
@@ -848,12 +858,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const handleScoop = (loserId) => {
+        const winnerId = Object.keys(appState.game.players).find(id => id !== loserId);
+        if (!winnerId) return;
+
+        const winner = appState.game.players[winnerId];
+        if (winner) {
+            winner.prizesTaken = Array.from({ length: appState.game.prizeCount }, (_, i) => i + 1);
+            appState.game.status = 'finished';
+            appState.game.timerState.running = false;
+            playBuzzer();
+            broadcastGameState();
+            fullRender();
+        }
+    };
+
     const bindHostEvents = () => {
         if (!appState.channel) return;
 
-        // Unbind first to prevent duplicates if this function is ever called more than once.
         appState.channel.unbind('client-update-prizes');
         appState.channel.unbind('client-end-turn');
+        appState.channel.unbind('client-scoop-game');
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
             const playerId = metadata.user_id;
@@ -877,6 +902,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 broadcastGameState();
                 fullRender();
             }
+        });
+
+        appState.channel.bind('client-scoop-game', (data, metadata) => {
+            handleScoop(metadata.user_id);
         });
 
         console.log("Host events have been successfully bound.");
@@ -1123,6 +1152,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 fullRender();
             } else {
                 appState.channel.trigger('client-end-turn', { turn: otherPlayerId });
+            }
+        }
+        if (e.target.id === 'scoop-btn') {
+            if (appState.isHost) {
+                handleScoop(appState.myId);
+            } else {
+                appState.channel.trigger('client-scoop-game', {});
             }
         }
         if (document.getElementById('game-menu-dropdown') && !document.getElementById('game-menu-btn').contains(e.target) && !document.getElementById('game-menu-dropdown').contains(e.target)) {
