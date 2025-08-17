@@ -202,6 +202,16 @@
             </div>
         </div>
 
+        <div id="issue-win-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
+                <h2 class="text-2xl font-bold mb-4">Issue Win To...</h2>
+                <div id="issue-win-options" class="space-y-3">
+                    <!-- Player buttons will be injected here -->
+                </div>
+                <button id="cancel-issue-win-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
+            </div>
+        </div>
+
         <section id="game-room-view" class="hidden min-h-screen flex flex-col p-2 sm:p-4">
             <header class="flex justify-between items-center mb-4">
                 <div class="text-sm">
@@ -335,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         presenter: document.getElementById('presenter-view'),
         chooseFirstPlayerModal: document.getElementById('choose-first-player-modal'),
         winnerModal: document.getElementById('winner-modal'),
+        issueWinModal: document.getElementById('issue-win-modal'),
     };
     
     // --- TRAINER AVATAR ---
@@ -386,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
             menuDropdown.innerHTML = `
                 <a href="#" id="start-game-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-blue-500 hover:text-white">Start Game</a>
                 <a href="#" id="restart-round-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-yellow-500 hover:text-white">Restart Round</a>
+                <a href="#" id="issue-win-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-500 hover:text-white">Issue Win</a>
                 <a href="#" id="kick-guest-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-orange-500 hover:text-white">Kick Guest</a>
                 <a href="#" id="end-session-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">End Session</a>
                 <a href="#" id="open-presenter-btn" target="_blank" class="block px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</a>
@@ -605,6 +617,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         showModal('chooseFirstPlayerModal');
+    };
+
+    const renderIssueWinModal = () => {
+        const optionsDiv = document.getElementById('issue-win-options');
+        optionsDiv.innerHTML = ''; // Clear previous options
+
+        Object.keys(appState.game.players).forEach(playerId => {
+            const player = appState.game.players[playerId];
+            const btn = document.createElement('button');
+            btn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl';
+            btn.textContent = player.name;
+            btn.dataset.playerId = playerId;
+            optionsDiv.appendChild(btn);
+        });
+
+        showModal('issueWinModal');
     };
 
     const showWinnerAnimation = (winner) => {
@@ -861,7 +889,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleScoop = (loserId) => {
         const winnerId = Object.keys(appState.game.players).find(id => id !== loserId);
         if (!winnerId) return;
+        handleIssueWin(winnerId);
+    };
 
+    const handleIssueWin = (winnerId) => {
+        if (!appState.isHost) return;
         const winner = appState.game.players[winnerId];
         if (winner) {
             winner.prizesTaken = Array.from({ length: appState.game.prizeCount }, (_, i) => i + 1);
@@ -1082,6 +1114,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderChooseFirstPlayerModal();
         } else if (targetId === 'restart-round-btn') {
             restartRound();
+        } else if (targetId === 'issue-win-btn') {
+            renderIssueWinModal();
         } else if (targetId === 'kick-guest-btn') {
             const guestId = Object.keys(appState.game.players).find(id => !appState.game.players[id].isHost);
             if(guestId) {
@@ -1117,6 +1151,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    document.getElementById('issue-win-options').addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const winnerId = e.target.dataset.playerId;
+            if (winnerId) {
+                hideModal('issueWinModal');
+                handleIssueWin(winnerId);
+            }
+        }
+    });
+
+    document.getElementById('cancel-issue-win-btn').addEventListener('click', () => hideModal('issueWinModal'));
 
     const restartRound = () => {
         Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
