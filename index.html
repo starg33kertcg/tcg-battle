@@ -1090,29 +1090,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     };
 
-    const startGameWithFirstPlayer = (firstPlayerId) => {
+    const startGameWithFirstPlayer = (firstPlayerId, isFirstGame = true) => {
         if (!appState.isHost) return;
 
         appState.game.status = 'active';
-        appState.game.timerState.running = true;
-        appState.game.timerState.startTime = Date.now();
-        appState.game.elapsed = 0;
         appState.game.turn = firstPlayerId;
-        
-        Object.keys(appState.game.players).forEach(id => {
-            if (!appState.game.wins[id]) {
-                appState.game.wins[id] = 0;
-            }
-        });
+        appState.winnerAnnounced = false;
+        appState.game.winnerId = null;
 
-        if (appState.game.timerType === 'chess') {
+        if (isFirstGame) {
+            appState.game.timerState.running = true;
+            appState.game.timerState.startTime = Date.now();
+            appState.game.timerState.elapsed = 0;
+            
             Object.keys(appState.game.players).forEach(id => {
-                appState.game.timerState.playerTimes[id] = appState.game.chessMinutes * 60 * 1000;
+                if (!appState.game.wins[id]) {
+                    appState.game.wins[id] = 0;
+                }
             });
+
+            if (appState.game.timerType === 'chess') {
+                Object.keys(appState.game.players).forEach(id => {
+                    appState.game.timerState.playerTimes[id] = appState.game.chessMinutes * 60 * 1000;
+                });
+            }
+            startTimer();
+        } else {
+            Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
+            appState.game.currentGame++;
         }
 
         broadcastGameState();
-        startTimer();
         fullRender();
     };
 
@@ -1275,7 +1283,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const firstPlayerId = e.target.dataset.playerId;
             if (firstPlayerId) {
                 hideModal('chooseFirstPlayerModal');
-                startGameWithFirstPlayer(firstPlayerId);
+                const isFirstGame = appState.game.status === 'waiting';
+                startGameWithFirstPlayer(firstPlayerId, isFirstGame);
             }
         }
     });
@@ -1328,14 +1337,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const startNextGame = () => {
-        Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
-        appState.game.status = 'active';
-        appState.game.currentGame++;
-        appState.winnerAnnounced = false;
-        appState.game.winnerId = null;
         hideModal('winnerModal');
-        broadcastGameState();
-        fullRender();
+        renderChooseFirstPlayerModal();
     };
 
     const restartRound = () => {
