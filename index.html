@@ -156,7 +156,7 @@
                         <label class="font-bold">Time Per Player (minutes)</label>
                         <input type="number" id="chess-minutes" value="20" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
                     </div>
-                    <div id="number-of-games-settings" class="hidden">
+                    <div id="number-of-games-settings">
                         <label class="font-bold">Number of Games</label>
                         <div class="flex space-x-2 mt-1">
                             <button data-mode="basic" class="game-mode-btn flex-1 bg-blue-600 text-white rounded p-2">Basic Swiss</button>
@@ -1142,6 +1142,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('select-pokemon').addEventListener('click', () => {
         document.getElementById('player-name-input').value = appState.playerName;
         showModal('gameSettingsModal');
+        const isCountdown = appState.game.timerType === 'countdown';
+        document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
+        document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
+        document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
     });
     document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
