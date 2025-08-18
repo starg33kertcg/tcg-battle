@@ -328,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
         roomCode: null,
         view: 'home', // home, tcgSelection, gameRoom, presenter
         playerName: `Player${Math.floor(Math.random() * 900 + 100)}`,
-        winnerAnnounced: false,
         game: {
             tcg: 'pokemon',
             status: 'waiting', // waiting, active, paused, finished
@@ -342,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             roundWinnerId: null,
             isTie: false,
             winnerId: null,
+            winnerAnnounced: false,
             players: {}, // { [id]: { name, prizesTaken: [], isHost, color, connected: true } }
             turn: null, // player id
             timerState: {
@@ -742,17 +742,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showModal('winnerModal');
-        appState.winnerAnnounced = true;
+        appState.game.winnerAnnounced = true;
     };
 
     const fullRender = () => {
         renderGameRoom();
         renderPresenter();
 
-        if (appState.game.status === 'finished' && !appState.winnerAnnounced) {
+        if (appState.game.status === 'finished' && !appState.game.winnerAnnounced) {
             const winner = appState.game.players[appState.game.roundWinnerId];
             showWinnerAnimation(winner, true, appState.game.isTie);
-        } else if (appState.game.status === 'game-over' && !appState.winnerAnnounced) {
+        } else if (appState.game.status === 'game-over' && !appState.game.winnerAnnounced) {
             const winner = appState.game.players[appState.game.winnerId];
             showWinnerAnimation(winner, false, false);
         }
@@ -1095,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         appState.game.status = 'active';
         appState.game.turn = firstPlayerId;
-        appState.winnerAnnounced = false;
+        appState.game.winnerAnnounced = false;
         appState.game.winnerId = null;
 
         if (isFirstGame) {
@@ -1350,11 +1350,11 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.game.roundWinnerId = null;
         appState.game.isTie = false;
         appState.game.winnerId = null;
+        appState.game.winnerAnnounced = false;
         if(timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
         }
-        appState.winnerAnnounced = false;
         hideModal('winnerModal');
         broadcastGameState();
         fullRender();
