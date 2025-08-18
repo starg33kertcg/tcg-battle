@@ -211,21 +211,11 @@
 
         <div id="issue-win-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
             <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
-                <h2 class="text-2xl font-bold mb-4">Issue Win To...</h2>
+                <h2 class="text-2xl font-bold mb-4">End Game</h2>
                 <div id="issue-win-options" class="space-y-3">
                     <!-- Player buttons will be injected here -->
                 </div>
                 <button id="cancel-issue-win-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
-            </div>
-        </div>
-
-        <div id="time-expired-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
-                <h2 class="text-2xl font-bold mb-4">Time has expired!</h2>
-                <p class="mb-4">Please issue a game win or declare a tie.</p>
-                <div id="time-expired-options" class="space-y-3">
-                    <!-- Player buttons will be injected here -->
-                </div>
             </div>
         </div>
 
@@ -372,7 +362,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chooseFirstPlayerModal: document.getElementById('choose-first-player-modal'),
         winnerModal: document.getElementById('winner-modal'),
         issueWinModal: document.getElementById('issue-win-modal'),
-        timeExpiredModal: document.getElementById('time-expired-modal'),
     };
     
     // --- TRAINER AVATAR ---
@@ -675,34 +664,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const player = appState.game.players[playerId];
             const btn = document.createElement('button');
             btn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl';
-            btn.textContent = player.name;
-            btn.dataset.playerId = playerId;
-            optionsDiv.appendChild(btn);
-        });
-
-        showModal('issueWinModal');
-    };
-
-    const renderTimeExpiredModal = () => {
-        const optionsDiv = document.getElementById('time-expired-options');
-        optionsDiv.innerHTML = ''; // Clear previous options
-
-        Object.keys(appState.game.players).forEach(playerId => {
-            const player = appState.game.players[playerId];
-            const btn = document.createElement('button');
-            btn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl';
             btn.textContent = `Award Win to ${player.name}`;
             btn.dataset.playerId = playerId;
             optionsDiv.appendChild(btn);
         });
 
-        const tieBtn = document.createElement('button');
-        tieBtn.className = 'w-full bg-gray-500 hover:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg text-xl mt-2';
-        tieBtn.textContent = 'Issue a Tie';
-        tieBtn.dataset.playerId = 'tie';
-        optionsDiv.appendChild(tieBtn);
+        if (appState.game.gameMode === 'bestOfThree') {
+            const tieBtn = document.createElement('button');
+            tieBtn.className = 'w-full bg-gray-500 hover:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg text-xl mt-2';
+            tieBtn.textContent = 'Declare a Tie';
+            tieBtn.dataset.playerId = 'tie';
+            optionsDiv.appendChild(tieBtn);
+        }
 
-        showModal('time-expired-modal');
+        showModal('issueWinModal');
     };
 
     const showWinnerAnimation = (winner, isRoundWin = false, isTie = false) => {
@@ -1010,6 +985,30 @@ document.addEventListener('DOMContentLoaded', () => {
         handleGameWin(winnerId);
     };
 
+    const handleTie = () => {
+        if (!appState.isHost) return;
+
+        const pIds = Object.keys(appState.game.players);
+        const p1Id = pIds[0];
+        const p2Id = pIds[1];
+        const p1Wins = appState.game.wins[p1Id] || 0;
+        const p2Wins = appState.game.wins[p2Id] || 0;
+
+        if (p1Wins > p2Wins) {
+            appState.game.roundWinnerId = p1Id;
+        } else if (p2Wins > p1Wins) {
+            appState.game.roundWinnerId = p2Id;
+        } else {
+            appState.game.isTie = true;
+        }
+
+        appState.game.status = 'finished';
+        appState.game.timerState.running = false;
+        playBuzzer();
+        broadcastGameState();
+        fullRender();
+    };
+
     const bindHostEvents = () => {
         if (!appState.channel) return;
 
@@ -1302,7 +1301,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('issue-win-options').addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             const winnerId = e.target.dataset.playerId;
-            if (winnerId) {
+            if (winnerId === 'tie') {
+                hideModal('issueWinModal');
+                handleTie();
+            } else if (winnerId) {
                 hideModal('issueWinModal');
                 handleIssueWin(winnerId);
             }
@@ -1310,41 +1312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('cancel-issue-win-btn').addEventListener('click', () => hideModal('issueWinModal'));
-
-    document.getElementById('time-expired-options').addEventListener('click', (e) => {
-        if (e.target.tagName !== 'BUTTON') return;
-        const decision = e.target.dataset.playerId;
-        hideModal('time-expired-modal');
-
-        const pIds = Object.keys(appState.game.players);
-        const p1Id = pIds[0];
-        const p2Id = pIds[1];
-        const p1Wins = appState.game.wins[p1Id] || 0;
-        const p2Wins = appState.game.wins[p2Id] || 0;
-
-        if (decision === 'tie') {
-            if (p1Wins > p2Wins) appState.game.roundWinnerId = p1Id;
-            else if (p2Wins > p1Wins) appState.game.roundWinnerId = p2Id;
-            else appState.game.isTie = true;
-        } else {
-            const awardedWinnerId = decision;
-            const currentWins = appState.game.wins[awardedWinnerId] || 0;
-            const opponentId = pIds.find(id => id !== awardedWinnerId);
-            const opponentWins = appState.game.wins[opponentId] || 0;
-
-            if (currentWins + 1 >= 2) {
-                appState.game.roundWinnerId = awardedWinnerId;
-            } else if (currentWins === 0 && opponentWins === 0) {
-                appState.game.roundWinnerId = awardedWinnerId;
-            } else {
-                appState.game.isTie = true;
-            }
-        }
-        
-        appState.game.status = 'finished';
-        broadcastGameState();
-        fullRender();
-    });
 
     const startNextGame = () => {
         hideModal('winnerModal');
