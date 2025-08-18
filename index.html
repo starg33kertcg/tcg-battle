@@ -1062,31 +1062,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const delta = Date.now() - lastTick;
             lastTick = Date.now();
             
-            const { timerType, turn } = appState.game;
+            const { timerType } = appState.game;
+            let timeIsUp = false;
+
             if (timerType === 'countdown') {
                 appState.game.timerState.elapsed += delta;
                 if ((appState.game.countdownMinutes * 60 * 1000) - appState.game.timerState.elapsed <= 0) {
-                    appState.game.timerState.running = false;
-                    playBuzzer();
-                    if (appState.game.gameMode === 'bestOfThree') {
-                        renderTimeExpiredModal();
-                    } else {
-                        // Handle basic swiss timeout if needed
-                    }
+                    timeIsUp = true;
                 }
-            } else {
+            } else { // chess
+                const { turn } = appState.game;
                 if (turn && appState.game.timerState.playerTimes[turn]) {
                     appState.game.timerState.playerTimes[turn] -= delta;
                     if (appState.game.timerState.playerTimes[turn] <= 0) {
-                        appState.game.timerState.playerTimes[turn] = 0;
-                        appState.game.timerState.running = false;
-                        playBuzzer();
+                        timeIsUp = true;
                     }
                 }
             }
             
-            broadcastGameState();
-            fullRender();
+            if (timeIsUp) {
+                appState.game.timerState.running = false;
+                playBuzzer();
+                broadcastGameState(); 
+                fullRender();       
+                
+                clearInterval(timerInterval);
+                timerInterval = null;
+
+                if (appState.game.gameMode === 'bestOfThree' && timerType === 'countdown') {
+                    renderTimeExpiredModal();
+                }
+            } else {
+                broadcastGameState();
+                fullRender();
+            }
         }, 1000);
     };
 
