@@ -1403,7 +1403,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const roomToJoin = urlParams.get('join');
         const savedSession = sessionStorage.getItem('tcgBattleSession');
 
-        if (savedSession) {
+        if (presenterCode) {
+            appState.isHost = false;
+            appState.myId = `presenter_${Date.now()}`;
+            initPusher();
+            subscribeToChannel(presenterCode);
+            showView('presenter');
+        } else if (savedSession) {
             const sessionData = JSON.parse(savedSession);
             appState.roomCode = sessionData.roomCode;
             appState.isHost = sessionData.isHost;
@@ -1421,12 +1427,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showView(sessionData.view);
             fullRender();
 
-        } else if (presenterCode) {
-            appState.isHost = false;
-            appState.myId = `presenter_${Date.now()}`;
-            initPusher();
-            subscribeToChannel(presenterCode);
-            showView('presenter');
         } else if (roomToJoin) {
             document.getElementById('room-code-input').value = roomToJoin;
             showModal('joinSessionModal');
