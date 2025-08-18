@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerName: `Player${Math.floor(Math.random() * 900 + 100)}`,
         game: {
             tcg: 'pokemon',
-            status: 'waiting', // waiting, active, paused, finished
+            status: 'waiting', // waiting, active, paused, finished, overtime
             prizeCount: 6,
             timerType: 'countdown', // countdown, chess
             countdownMinutes: 30,
@@ -482,6 +482,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusText = `Game ${game.currentGame} of 3`;
             }
         }
+        if (game.status === 'overtime') {
+            statusText = "Time expired! Turns start now!";
+        }
         if (game.status === 'paused') statusText = "Game Paused - Opponent Disconnected";
         if (game.status === 'finished') {
             const winner = game.players[game.roundWinnerId];
@@ -532,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderActionButtons = () => {
         const controlsContainer = document.getElementById('turn-controls');
         controlsContainer.innerHTML = '';
-        if (appState.game.status !== 'active') return;
+        if (appState.game.status !== 'active' && appState.game.status !== 'overtime') return;
 
         const isMyTurn = appState.myId === appState.game.turn;
 
@@ -549,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scoopBtn.id = 'scoop-btn';
         scoopBtn.className = 'flex-shrink-0 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-lg transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed';
         scoopBtn.textContent = 'SCOOP!';
-        scoopBtn.disabled = appState.game.status !== 'active';
+        scoopBtn.disabled = appState.game.status !== 'active' && appState.game.status !== 'overtime';
 
         buttonWrapper.appendChild(endTurnBtn);
         buttonWrapper.appendChild(scoopBtn);
@@ -1066,8 +1069,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (timerType === 'countdown') {
                 appState.game.timerState.elapsed += delta;
-                if ((appState.game.countdownMinutes * 60 * 1000) - appState.game.timerState.elapsed <= 0) {
+                if ((appState.game.countdownMinutes * 60 * 1000) - appState.game.timerState.elapsed < 1) {
                     timeIsUp = true;
+                    appState.game.timerState.elapsed = appState.game.countdownMinutes * 60 * 1000;
                 }
             } else { // chess
                 const { turn } = appState.game;
@@ -1086,8 +1090,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.game.timerState.running = false;
                 playBuzzer();
 
-                if (appState.isHost && appState.game.gameMode === 'bestOfThree' && timerType === 'countdown') {
-                    renderTimeExpiredModal();
+                if (timerType === 'countdown') {
+                    appState.game.status = 'overtime';
+                } else { // Chess clock timeout
+                    const loserId = appState.game.turn;
+                    handleGameWin(Object.keys(appState.game.players).find(id => id !== loserId));
                 }
                 
                 broadcastGameState();
