@@ -76,6 +76,11 @@
         .winner-animation {
             animation: winner-pop 0.5s ease-out forwards;
         }
+
+        /* Lorcana Styles */
+        .lore-icon-glow {
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+        }
     </style>
 </head>
 <body class="text-gray-100" style="background-color: #1a1a2e;">
@@ -98,9 +103,13 @@
         <section id="tcg-selection-view" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
             <h2 class="text-4xl font-bold mb-8">Choose Your TCG</h2>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
-                <div id="select-pokemon" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-yellow-400 hover:bg-gray-600 transition-colors">
+                <div id="select-pokemon" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-yellow-400 hover:bg-gray-600 transition-colors">
                     <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/025.png" alt="Pokémon" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=Pokemon';">
                     <h3 class="font-bold text-lg">Pokémon</h3>
+                </div>
+                <div id="select-lorcana" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-purple-400 hover:bg-gray-600 transition-colors">
+                    <img src="https://images.squarespace-cdn.com/content/v1/63484c431452471542370700/1681222998725-632G002oci9r2900g4f7/Lorcana-Logo-EN-01-Web.png" alt="Lorcana" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=Lorcana';">
+                    <h3 class="font-bold text-lg">Lorcana</h3>
                 </div>
                 <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
                     <h3 class="font-bold text-lg text-gray-400">Magic: The Gathering</h3>
@@ -112,10 +121,6 @@
                 </div>
                 <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
                     <h3 class="font-bold text-lg text-gray-400">One Piece</h3>
-                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
-                </div>
-                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
-                    <h3 class="font-bold text-lg text-gray-400">Lorcana</h3>
                     <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
                 </div>
                  <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
@@ -134,12 +139,16 @@
                         <label class="font-bold">Player Name</label>
                         <input type="text" id="player-name-input" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1" placeholder="Enter your name">
                     </div>
-                    <div>
+                    <div id="prize-card-settings">
                         <label class="font-bold">Prize Cards</label>
                         <div class="flex space-x-2 mt-1">
                             <button data-prizes="6" class="prize-option-btn flex-1 bg-blue-600 text-white rounded p-2">6 (Standard)</button>
                             <button data-prizes="4" class="prize-option-btn flex-1 bg-gray-600 text-white rounded p-2">4 (Pre-Release)</button>
                         </div>
+                    </div>
+                    <div id="lorcana-lore-settings" class="hidden">
+                        <label class="font-bold">Lore to Win</label>
+                        <input type="number" id="lore-to-win-input" value="20" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
                     </div>
                     <div>
                         <label class="font-bold">Timer Type</label>
@@ -256,9 +265,17 @@
                     
                     <div id="timer-display-controls" class="mb-4 text-center"></div>
                     
-                    <h3 class="font-bold text-xl mb-2">Your Prize Cards</h3>
-                    <div id="prize-card-grid" class="grid grid-cols-2 gap-3">
+                    <div id="pokemon-controls">
+                        <h3 class="font-bold text-xl mb-2">Your Prize Cards</h3>
+                        <div id="prize-card-grid" class="grid grid-cols-2 gap-3">
                         </div>
+                    </div>
+
+                    <div id="lorcana-controls" class="hidden">
+                        <h3 class="font-bold text-xl mb-2">Your Lore</h3>
+                        <div id="lore-tracker" class="flex flex-col items-center">
+                        </div>
+                    </div>
                     
                     <div id="turn-controls" class="mt-4">
                     </div>
@@ -273,6 +290,7 @@
                         <div id="presenter-p1-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p1-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 1</h2>
                         <p id="presenter-p1-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
+                        <div id="presenter-p1-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
                     </div>
                     
                     <div class="flex-shrink-0 mx-8">
@@ -284,6 +302,7 @@
                         <div id="presenter-p2-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p2-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 2</h2>
                         <p id="presenter-p2-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
+                        <div id="presenter-p2-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
                     </div>
                 </div>
 
@@ -322,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tcg: 'pokemon',
             status: 'waiting', // waiting, active, paused, finished, overtime
             prizeCount: 6,
+            loreToWin: 20,
             timerType: 'countdown', // countdown, chess
             countdownMinutes: 30,
             chessMinutes: 20,
@@ -332,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isTie: false,
             winnerId: null,
             winnerAnnounced: false,
-            players: {}, // { [id]: { name, prizesTaken: [], isHost, color, connected: true } }
+            players: {}, // { [id]: { name, prizesTaken: [], loreCount: 0, isHost, color, connected: true } }
             turn: null, // player id
             timerState: {
                 running: false,
@@ -364,9 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
         issueWinModal: document.getElementById('issue-win-modal'),
     };
     
-    // --- TRAINER AVATAR ---
+    // --- ASSETS ---
     const trainerSilhouetteSVG = `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
     const avatarColors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#8b5cf6', '#ec4899', '#f97316'];
+    const loreIconSVG = `<svg class="w-16 h-16 text-gray-200 lore-icon-glow" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.0001 2.40039L18.4001 12.0004L12.0001 21.6004L5.6001 12.0004L12.0001 2.40039ZM12.0001 7.68039L9.1201 12.0004L12.0001 16.3204L14.8801 12.0004L12.0001 7.68039Z"/></svg>`;
 
     // --- UTILITY FUNCTIONS ---
     const generateRoomCode = () => Math.floor(10000 + Math.random() * 90000).toString();
@@ -440,33 +461,37 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('game-controls').style.display = connectedPlayerCount >= 2 ? 'block' : 'none';
         }
 
-
-        const prizeGrid = document.getElementById('prize-card-grid');
-        prizeGrid.innerHTML = '';
-        for (let i = 1; i <= game.prizeCount; i++) {
-            const card = document.createElement('button');
-            card.dataset.prizeId = i;
-            card.className = 'prize-card p-4 sm:p-6 rounded-lg font-bold text-2xl bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed';
-            card.textContent = i;
-            if (me.prizesTaken.includes(i)) card.classList.add('taken');
-            card.disabled = game.status !== 'active';
-            prizeGrid.appendChild(card);
-        }
-
         const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
         const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
         const p1Indicator = document.getElementById('player1-turn-indicator');
         const p2Indicator = document.getElementById('player2-turn-indicator');
         
-        if (p1Id && game.players[p1Id]) {
-            const p1 = game.players[p1Id];
-            const p1PrizesLeft = game.prizeCount - p1.prizesTaken.length;
-            document.getElementById('player1-name-turn').textContent = `${p1.name} (${p1PrizesLeft} Prizes)`;
-        }
-        if (p2Id && game.players[p2Id]) {
-            const p2 = game.players[p2Id];
-            const p2PrizesLeft = game.prizeCount - p2.prizesTaken.length;
-            document.getElementById('player2-name-turn').textContent = `${p2.name} (${p2PrizesLeft} Prizes)`;
+        if (game.tcg === 'pokemon') {
+            document.getElementById('pokemon-controls').classList.remove('hidden');
+            document.getElementById('lorcana-controls').classList.add('hidden');
+            renderPrizeCards(me);
+            if (p1Id && game.players[p1Id]) {
+                const p1 = game.players[p1Id];
+                const p1PrizesLeft = game.prizeCount - p1.prizesTaken.length;
+                document.getElementById('player1-name-turn').textContent = `${p1.name} (${p1PrizesLeft} Prizes)`;
+            }
+            if (p2Id && game.players[p2Id]) {
+                const p2 = game.players[p2Id];
+                const p2PrizesLeft = game.prizeCount - p2.prizesTaken.length;
+                document.getElementById('player2-name-turn').textContent = `${p2.name} (${p2PrizesLeft} Prizes)`;
+            }
+        } else if (game.tcg === 'lorcana') {
+            document.getElementById('pokemon-controls').classList.add('hidden');
+            document.getElementById('lorcana-controls').classList.remove('hidden');
+            renderLorcanaControls(me);
+            if (p1Id && game.players[p1Id]) {
+                const p1 = game.players[p1Id];
+                document.getElementById('player1-name-turn').textContent = `${p1.name} (${p1.loreCount} Lore)`;
+            }
+            if (p2Id && game.players[p2Id]) {
+                const p2 = game.players[p2Id];
+                document.getElementById('player2-name-turn').textContent = `${p2.name} (${p2.loreCount} Lore)`;
+            }
         }
 
         p1Indicator.classList.remove('turn-indicator-glow');
@@ -499,6 +524,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderTimerDisplay();
         renderActionButtons();
+    };
+
+    const renderPrizeCards = (me) => {
+        const prizeGrid = document.getElementById('prize-card-grid');
+        prizeGrid.innerHTML = '';
+        for (let i = 1; i <= appState.game.prizeCount; i++) {
+            const card = document.createElement('button');
+            card.dataset.prizeId = i;
+            card.className = 'prize-card p-4 sm:p-6 rounded-lg font-bold text-2xl bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed';
+            card.textContent = i;
+            if (me.prizesTaken.includes(i)) card.classList.add('taken');
+            card.disabled = appState.game.status !== 'active';
+            prizeGrid.appendChild(card);
+        }
+    };
+
+    const renderLorcanaControls = (me) => {
+        const loreTracker = document.getElementById('lore-tracker');
+        loreTracker.innerHTML = `
+            <button id="lore-up-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-up fa-2x"></i></button>
+            <div class="my-2 flex items-center">
+                ${loreIconSVG}
+                <span id="lore-count" class="text-5xl font-bold ml-4">${me.loreCount}</span>
+            </div>
+            <button id="lore-down-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-down fa-2x"></i></button>
+        `;
     };
 
     const renderTimerDisplay = () => {
@@ -565,8 +616,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
         const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
         
-        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], color: '#cccccc' };
-        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], color: '#cccccc' };
+        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, color: '#cccccc' };
+        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, color: '#cccccc' };
 
         document.getElementById('presenter-p1-name').textContent = p1.name;
         document.getElementById('presenter-p2-name').textContent = p2.name;
@@ -592,33 +643,23 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('presenter-p2-wins').textContent = '';
         }
 
-        const renderPrizesInArc = (player, containerId, isReversed) => {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            const numPrizes = game.prizeCount;
-            const radius = 220;
-            const totalAngle = 150; 
-            const angleStep = numPrizes > 1 ? totalAngle / (numPrizes - 1) : 0;
-            const startAngle = -75; 
-
-            for (let i = 1; i <= numPrizes; i++) {
-                const angle = startAngle + (angleStep * (i - 1));
-                const radians = angle * (Math.PI / 180);
-
-                const x = radius * Math.cos(radians);
-                const y = radius * Math.sin(radians);
-
-                const prizeEl = document.createElement('div');
-                prizeEl.className = 'presenter-prize-pokeball';
-                prizeEl.style.transform = `translate(${isReversed ? -x : x}px, ${y}px)`;
-                
-                const taken = player.prizesTaken.includes(i);
-                if(taken) prizeEl.classList.add('taken');
-                container.appendChild(prizeEl);
-            }
-        };
-        renderPrizesInArc(p1, 'presenter-p1-prizes', true);
-        renderPrizesInArc(p2, 'presenter-p2-prizes', false);
+        if (game.tcg === 'lorcana') {
+            document.getElementById('presenter-p1-prizes').classList.add('hidden');
+            document.getElementById('presenter-p2-prizes').classList.add('hidden');
+            const p1Lore = document.getElementById('presenter-p1-lore');
+            const p2Lore = document.getElementById('presenter-p2-lore');
+            p1Lore.classList.remove('hidden');
+            p2Lore.classList.remove('hidden');
+            p1Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p1.loreCount} Lore</span>`;
+            p2Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p2.loreCount} Lore</span>`;
+        } else {
+            document.getElementById('presenter-p1-prizes').classList.remove('hidden');
+            document.getElementById('presenter-p2-prizes').classList.remove('hidden');
+            document.getElementById('presenter-p1-lore').classList.add('hidden');
+            document.getElementById('presenter-p2-lore').classList.add('hidden');
+            renderPrizesInArc(p1, 'presenter-p1-prizes', true);
+            renderPrizesInArc(p2, 'presenter-p2-prizes', false);
+        }
 
         const countdownTimerEl = document.getElementById('presenter-timer');
         const chessTimersEl = document.getElementById('presenter-chess-timers');
@@ -639,6 +680,32 @@ document.addEventListener('DOMContentLoaded', () => {
             p2ChessEl.textContent = formatTime(p2Time);
             p1ChessEl.style.color = p1.color;
             p2ChessEl.style.color = p2.color;
+        }
+    };
+
+    const renderPrizesInArc = (player, containerId, isReversed) => {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        const numPrizes = appState.game.prizeCount;
+        const radius = 220;
+        const totalAngle = 150; 
+        const angleStep = numPrizes > 1 ? totalAngle / (numPrizes - 1) : 0;
+        const startAngle = -75; 
+
+        for (let i = 1; i <= numPrizes; i++) {
+            const angle = startAngle + (angleStep * (i - 1));
+            const radians = angle * (Math.PI / 180);
+
+            const x = radius * Math.cos(radians);
+            const y = radius * Math.sin(radians);
+
+            const prizeEl = document.createElement('div');
+            prizeEl.className = 'presenter-prize-pokeball';
+            prizeEl.style.transform = `translate(${isReversed ? -x : x}px, ${y}px)`;
+            
+            const taken = player.prizesTaken.includes(i);
+            if(taken) prizeEl.classList.add('taken');
+            container.appendChild(prizeEl);
         }
     };
 
@@ -782,7 +849,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.isHost) {
                 console.log("I am the host.");
                 if (Object.keys(appState.game.players).length === 0) {
-                    appState.game.players[appState.myId] = { name: appState.playerName, prizesTaken: [], isHost: true, color: avatarColors[0], connected: true };
+                    appState.game.players[appState.myId] = { name: appState.playerName, prizesTaken: [], loreCount: 0, isHost: true, color: avatarColors[0], connected: true };
                 }
                 
                 if(appState.game.players[appState.myId]) {
@@ -833,6 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     appState.game.players[member.id] = {
                         name: playerData.name,
                         prizesTaken: playerData.prizesTaken,
+                        loreCount: playerData.loreCount,
                         isHost: false, // Force guest status on reconnect
                         color: playerData.color,
                         connected: true
@@ -861,6 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     appState.game.players[member.id] = {
                         name: member.info.playerName,
                         prizesTaken: [],
+                        loreCount: 0,
                         isHost: false,
                         color: avatarColors[1],
                         connected: true
@@ -1017,6 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.channel.unbind('client-update-prizes');
         appState.channel.unbind('client-end-turn');
         appState.channel.unbind('client-scoop-game');
+        appState.channel.unbind('client-update-lore');
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
             const playerId = metadata.user_id;
@@ -1024,6 +1094,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.game.players[playerId].prizesTaken = data.prizes;
                 
                 if (data.prizes.length >= appState.game.prizeCount) {
+                    handleGameWin(playerId);
+                } else {
+                    broadcastGameState();
+                    fullRender();
+                }
+            }
+        });
+
+        appState.channel.bind('client-update-lore', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].loreCount = data.loreCount;
+                if (data.loreCount >= appState.game.loreToWin) {
                     handleGameWin(playerId);
                 } else {
                     broadcastGameState();
@@ -1162,14 +1245,25 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal('joinSessionModal');
     });
     document.getElementById('back-to-home-from-tcg').addEventListener('click', () => showView('home'));
-    document.getElementById('select-pokemon').addEventListener('click', () => {
+    
+    const setupGameSettings = (tcg) => {
+        appState.game.tcg = tcg;
         document.getElementById('player-name-input').value = appState.playerName;
         showModal('gameSettingsModal');
+        
+        const isPokemon = tcg === 'pokemon';
+        document.getElementById('prize-card-settings').style.display = isPokemon ? 'block' : 'none';
+        document.getElementById('lorcana-lore-settings').style.display = isPokemon ? 'none' : 'block';
+
         const isCountdown = appState.game.timerType === 'countdown';
         document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
         document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
         document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
-    });
+    };
+
+    document.getElementById('select-pokemon').addEventListener('click', () => setupGameSettings('pokemon'));
+    document.getElementById('select-lorcana').addEventListener('click', () => setupGameSettings('lorcana'));
+
     document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
@@ -1199,6 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.playerName = document.getElementById('player-name-input').value || appState.playerName;
         appState.game.countdownMinutes = parseInt(document.getElementById('countdown-minutes').value) || 30;
         appState.game.chessMinutes = parseInt(document.getElementById('chess-minutes').value) || 20;
+        appState.game.loreToWin = parseInt(document.getElementById('lore-to-win-input').value) || 20;
 
         const sessionData = {
             roomCode: generateRoomCode(),
@@ -1331,7 +1426,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const restartRound = () => {
-        Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
+        Object.values(appState.game.players).forEach(p => {
+            p.prizesTaken = [];
+            p.loreCount = 0;
+        });
         appState.game.status = 'waiting';
         appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
         appState.game.wins = {};
@@ -1360,6 +1458,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.body.addEventListener('click', (e) => {
+        if (e.target.closest('#lore-up-btn')) {
+            const myPlayer = appState.game.players[appState.myId];
+            myPlayer.loreCount++;
+            if (appState.isHost) {
+                if (myPlayer.loreCount >= appState.game.loreToWin) {
+                    handleGameWin(appState.myId);
+                } else {
+                    broadcastGameState();
+                    fullRender();
+                }
+            } else {
+                appState.channel.trigger('client-update-lore', { loreCount: myPlayer.loreCount });
+            }
+        }
+        if (e.target.closest('#lore-down-btn')) {
+            const myPlayer = appState.game.players[appState.myId];
+            if (myPlayer.loreCount > 0) {
+                myPlayer.loreCount--;
+                if (appState.isHost) {
+                    broadcastGameState();
+                    fullRender();
+                } else {
+                    appState.channel.trigger('client-update-lore', { loreCount: myPlayer.loreCount });
+                }
+            }
+        }
         if (e.target.id === 'end-turn-btn') {
             const pIds = Object.keys(appState.game.players);
             const myId = appState.myId;
