@@ -1075,23 +1075,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (turn && appState.game.timerState.playerTimes[turn]) {
                     appState.game.timerState.playerTimes[turn] -= delta;
                     if (appState.game.timerState.playerTimes[turn] <= 0) {
+                        appState.game.timerState.playerTimes[turn] = 0;
                         timeIsUp = true;
                     }
                 }
             }
             
             if (timeIsUp) {
-                appState.game.timerState.running = false;
-                playBuzzer();
-                broadcastGameState(); 
-                fullRender();       
-                
                 clearInterval(timerInterval);
                 timerInterval = null;
+                appState.game.timerState.running = false;
+                playBuzzer();
 
-                if (appState.game.gameMode === 'bestOfThree' && timerType === 'countdown') {
+                if (appState.isHost && appState.game.gameMode === 'bestOfThree' && timerType === 'countdown') {
                     renderTimeExpiredModal();
                 }
+                
+                broadcastGameState();
+                fullRender();
             } else {
                 broadcastGameState();
                 fullRender();
