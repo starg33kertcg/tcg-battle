@@ -416,9 +416,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <a href="#" id="issue-win-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-500 hover:text-white">Issue Win</a>
                 <a href="#" id="kick-guest-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-orange-500 hover:text-white">Kick Guest</a>
                 <a href="#" id="end-session-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">End Session</a>
-                <a href="#" id="open-presenter-btn" target="_blank" class="block px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</a>
+                <a href="#" id="open-presenter-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</a>
             `;
-            document.getElementById('open-presenter-btn').href = `?presenter=${appState.roomCode}`;
         } else {
              menuDropdown.innerHTML = `<a href="#" id="leave-battle-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">Leave Battle</a>`;
         }
@@ -672,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
             optionsDiv.appendChild(btn);
         });
 
-        if (appState.game.gameMode === 'bestOfThree') {
+        if (appState.game.timerType === 'countdown') {
             const tieBtn = document.createElement('button');
             tieBtn.className = 'w-full bg-gray-500 hover:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg text-xl mt-2';
             tieBtn.textContent = 'Declare a Tie';
@@ -1285,6 +1284,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (targetId === 'leave-battle-btn') {
             sessionStorage.removeItem('tcgBattleSession');
             window.location.href = window.location.pathname;
+        } else if (targetId === 'open-presenter-btn') {
+            window.open(e.target.href, '_blank');
         }
 
         document.getElementById('game-menu-dropdown').classList.add('hidden');
