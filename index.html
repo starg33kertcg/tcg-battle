@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <a href="#" id="issue-win-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-500 hover:text-white">Issue Win</a>
                 <a href="#" id="kick-guest-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-orange-500 hover:text-white">Kick Guest</a>
                 <a href="#" id="end-session-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">End Session</a>
-                <a href="#" id="open-presenter-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</a>
+                <button id="open-presenter-btn" class="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-purple-500 hover:text-white">Open Presenter</button>
             `;
         } else {
              menuDropdown.innerHTML = `<a href="#" id="leave-battle-btn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-red-500 hover:text-white">Leave Battle</a>`;
@@ -1253,8 +1253,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('game-menu-dropdown').addEventListener('click', (e) => {
-        e.preventDefault();
         const targetId = e.target.id;
+
+        if (targetId !== 'open-presenter-btn') {
+            e.preventDefault();
+        }
 
         if (targetId === 'start-game-btn') {
             const pIds = Object.keys(appState.game.players);
@@ -1285,7 +1288,8 @@ document.addEventListener('DOMContentLoaded', () => {
             sessionStorage.removeItem('tcgBattleSession');
             window.location.href = window.location.pathname;
         } else if (targetId === 'open-presenter-btn') {
-            window.open(e.target.href, '_blank');
+            const presenterUrl = `${window.location.origin}${window.location.pathname}?presenter=${appState.roomCode}`;
+            window.open(presenterUrl, '_blank');
         }
 
         document.getElementById('game-menu-dropdown').classList.add('hidden');
