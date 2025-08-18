@@ -156,6 +156,13 @@
                         <label class="font-bold">Time Per Player (minutes)</label>
                         <input type="number" id="chess-minutes" value="20" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
                     </div>
+                    <div id="number-of-games-settings" class="hidden">
+                        <label class="font-bold">Number of Games</label>
+                        <div class="flex space-x-2 mt-1">
+                            <button data-mode="basic" class="game-mode-btn flex-1 bg-blue-600 text-white rounded p-2">Basic Swiss</button>
+                            <button data-mode="bestOfThree" class="game-mode-btn flex-1 bg-gray-600 text-white rounded p-2">Best-of-Three</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
                     <button id="cancel-settings-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
@@ -195,7 +202,7 @@
         <div id="winner-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
             <div id="winner-card" class="bg-gray-700 rounded-lg p-8 w-full max-w-md text-center winner-animation">
                 <i class="fas fa-trophy text-yellow-400 text-6xl mb-4"></i>
-                <h2 class="text-4xl font-bold mb-2">WINNER!</h2>
+                <h2 id="winner-title" class="text-4xl font-bold mb-2">WINNER!</h2>
                 <p id="winner-name" class="text-3xl font-bangers tracking-wider"></p>
                 <div id="winner-modal-buttons" class="mt-6">
                     </div>
@@ -209,6 +216,16 @@
                     <!-- Player buttons will be injected here -->
                 </div>
                 <button id="cancel-issue-win-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
+            </div>
+        </div>
+
+        <div id="time-expired-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
+                <h2 class="text-2xl font-bold mb-4">Time has expired!</h2>
+                <p class="mb-4">Please issue a game win or declare a tie.</p>
+                <div id="time-expired-options" class="space-y-3">
+                    <!-- Player buttons will be injected here -->
+                </div>
             </div>
         </div>
 
@@ -265,15 +282,18 @@
                     <div id="presenter-p1-side" class="flex-1 flex flex-col items-center">
                         <div id="presenter-p1-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p1-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 1</h2>
+                        <p id="presenter-p1-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                     </div>
                     
                     <div class="flex-shrink-0 mx-8">
                         <img src="https://tcgbattle.netlify.app/images/tcg_battle_logo.png" alt="TCG Battle Logo" class="w-64 md:w-80">
+                        <p id="presenter-game-number" class="text-center text-3xl font-bold text-white mt-4"></p>
                     </div>
 
                     <div id="presenter-p2-side" class="flex-1 flex flex-col items-center">
                         <div id="presenter-p2-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p2-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 2</h2>
+                        <p id="presenter-p2-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                     </div>
                 </div>
 
@@ -316,6 +336,12 @@ document.addEventListener('DOMContentLoaded', () => {
             timerType: 'countdown', // countdown, chess
             countdownMinutes: 30,
             chessMinutes: 20,
+            gameMode: 'basic', // basic, bestOfThree
+            currentGame: 1,
+            wins: {}, // { [playerId]: winCount }
+            roundWinnerId: null,
+            isTie: false,
+            winnerId: null,
             players: {}, // { [id]: { name, prizesTaken: [], isHost, color, connected: true } }
             turn: null, // player id
             timerState: {
@@ -346,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chooseFirstPlayerModal: document.getElementById('choose-first-player-modal'),
         winnerModal: document.getElementById('winner-modal'),
         issueWinModal: document.getElementById('issue-win-modal'),
+        timeExpiredModal: document.getElementById('time-expired-modal'),
     };
     
     // --- TRAINER AVATAR ---
@@ -460,11 +487,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (game.turn === p2Id) p2Indicator.classList.add('turn-indicator-glow');
 
         let statusText = "Waiting to start...";
-        if (game.status === 'active') statusText = "Game in progress!";
+        if (game.status === 'active') {
+            statusText = "Game in progress!";
+            if (game.gameMode === 'bestOfThree') {
+                statusText = `Game ${game.currentGame} of 3`;
+            }
+        }
         if (game.status === 'paused') statusText = "Game Paused - Opponent Disconnected";
         if (game.status === 'finished') {
-            const winner = Object.values(game.players).find(p => p.prizesTaken.length >= appState.game.prizeCount);
-            statusText = winner ? `Game Over! ${winner.name} wins!` : "Game Over!";
+            const winner = game.players[game.roundWinnerId];
+            if (game.isTie) {
+                statusText = "Round Tied!";
+            } else if (winner) {
+                statusText = `Game Over! ${winner.name} wins the round!`;
+            } else {
+                statusText = "Game Over!";
+            }
         }
         document.getElementById('game-status-text').textContent = statusText;
 
@@ -553,6 +591,16 @@ document.addEventListener('DOMContentLoaded', () => {
         p2Avatar.style.color = p2.color;
         p2Avatar.classList.toggle('turn-indicator-glow', game.turn === p2Id);
 
+        if (game.gameMode === 'bestOfThree') {
+            document.getElementById('presenter-game-number').textContent = `Game ${game.currentGame}`;
+            document.getElementById('presenter-p1-wins').textContent = `${game.wins[p1Id] || 0} Wins`;
+            document.getElementById('presenter-p2-wins').textContent = `${game.wins[p2Id] || 0} Wins`;
+        } else {
+            document.getElementById('presenter-game-number').textContent = '';
+            document.getElementById('presenter-p1-wins').textContent = '';
+            document.getElementById('presenter-p2-wins').textContent = '';
+        }
+
         const renderPrizesInArc = (player, containerId, isReversed) => {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
@@ -635,18 +683,56 @@ document.addEventListener('DOMContentLoaded', () => {
         showModal('issueWinModal');
     };
 
-    const showWinnerAnimation = (winner) => {
-        if (!winner) return;
-        document.getElementById('winner-name').textContent = winner.name;
+    const renderTimeExpiredModal = () => {
+        const optionsDiv = document.getElementById('time-expired-options');
+        optionsDiv.innerHTML = ''; // Clear previous options
+
+        Object.keys(appState.game.players).forEach(playerId => {
+            const player = appState.game.players[playerId];
+            const btn = document.createElement('button');
+            btn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl';
+            btn.textContent = `Award Win to ${player.name}`;
+            btn.dataset.playerId = playerId;
+            optionsDiv.appendChild(btn);
+        });
+
+        const tieBtn = document.createElement('button');
+        tieBtn.className = 'w-full bg-gray-500 hover:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg text-xl mt-2';
+        tieBtn.textContent = 'Issue a Tie';
+        tieBtn.dataset.playerId = 'tie';
+        optionsDiv.appendChild(tieBtn);
+
+        showModal('time-expired-modal');
+    };
+
+    const showWinnerAnimation = (winner, isRoundWin = false, isTie = false) => {
+        const winnerTitle = document.getElementById('winner-title');
+        const winnerName = document.getElementById('winner-name');
+
+        if (isTie) {
+            winnerTitle.textContent = "TIE!";
+            winnerName.textContent = "The round results in a tie!";
+        } else if (winner) {
+            winnerTitle.textContent = isRoundWin ? "ROUND WINNER!" : "WINNER!";
+            winnerName.textContent = isRoundWin ? `${winner.name} wins the round!` : winner.name;
+        } else {
+            return; // No winner to show
+        }
         
         const buttonContainer = document.getElementById('winner-modal-buttons');
         buttonContainer.innerHTML = '';
         if (appState.isHost) {
-            const playAgainBtn = document.createElement('button');
-            playAgainBtn.id = 'play-again-btn';
-            playAgainBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
-            playAgainBtn.textContent = 'Play Again';
-            buttonContainer.appendChild(playAgainBtn);
+            const btn = document.createElement('button');
+            if (appState.game.gameMode === 'bestOfThree' && !isRoundWin && !isTie) {
+                btn.id = 'next-game-btn';
+                btn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
+                btn.textContent = 'Next Game';
+            } else {
+                btn.id = 'play-again-btn';
+                btn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
+                btn.textContent = 'Play Again';
+            }
+            buttonContainer.appendChild(btn);
         } else {
             const closeBtn = document.createElement('button');
             closeBtn.id = 'close-winner-btn';
@@ -664,10 +750,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPresenter();
 
         if (appState.game.status === 'finished' && !appState.winnerAnnounced) {
-            const winner = Object.values(appState.game.players).find(p => p.prizesTaken.length >= appState.game.prizeCount);
-            if (winner) {
-                showWinnerAnimation(winner);
-            }
+            const winner = appState.game.players[appState.game.roundWinnerId];
+            showWinnerAnimation(winner, true, appState.game.isTie);
+        } else if (appState.game.status === 'game-over' && !appState.winnerAnnounced) {
+            const winner = appState.game.players[appState.game.winnerId];
+            showWinnerAnimation(winner, false, false);
         }
     };
 
@@ -886,23 +973,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const handleGameWin = (winnerId) => {
+        if (!appState.isHost) return;
+        
+        appState.game.winnerId = winnerId;
+        
+        if (appState.game.gameMode === 'bestOfThree') {
+            appState.game.wins[winnerId] = (appState.game.wins[winnerId] || 0) + 1;
+            
+            if (appState.game.wins[winnerId] >= 2) {
+                appState.game.roundWinnerId = winnerId;
+                appState.game.status = 'finished';
+                appState.game.timerState.running = false;
+            } else {
+                appState.game.status = 'game-over'; // Intermediate state
+            }
+        } else {
+            appState.game.roundWinnerId = winnerId;
+            appState.game.status = 'finished';
+            appState.game.timerState.running = false;
+        }
+        
+        playBuzzer();
+        broadcastGameState();
+        fullRender();
+    };
+
     const handleScoop = (loserId) => {
         const winnerId = Object.keys(appState.game.players).find(id => id !== loserId);
         if (!winnerId) return;
-        handleIssueWin(winnerId);
+        handleGameWin(winnerId);
     };
 
     const handleIssueWin = (winnerId) => {
         if (!appState.isHost) return;
-        const winner = appState.game.players[winnerId];
-        if (winner) {
-            winner.prizesTaken = Array.from({ length: appState.game.prizeCount }, (_, i) => i + 1);
-            appState.game.status = 'finished';
-            appState.game.timerState.running = false;
-            playBuzzer();
-            broadcastGameState();
-            fullRender();
-        }
+        handleGameWin(winnerId);
     };
 
     const bindHostEvents = () => {
@@ -918,12 +1023,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.game.players[playerId].prizesTaken = data.prizes;
                 
                 if (data.prizes.length >= appState.game.prizeCount) {
-                    appState.game.status = 'finished';
-                    appState.game.timerState.running = false;
-                    playBuzzer();
+                    handleGameWin(playerId);
+                } else {
+                    broadcastGameState();
+                    fullRender();
                 }
-                broadcastGameState();
-                fullRender();
             }
         });
 
@@ -964,6 +1068,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if ((appState.game.countdownMinutes * 60 * 1000) - appState.game.timerState.elapsed <= 0) {
                     appState.game.timerState.running = false;
                     playBuzzer();
+                    if (appState.game.gameMode === 'bestOfThree') {
+                        renderTimeExpiredModal();
+                    } else {
+                        // Handle basic swiss timeout if needed
+                    }
                 }
             } else {
                 if (turn && appState.game.timerState.playerTimes[turn]) {
@@ -987,8 +1096,14 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.game.status = 'active';
         appState.game.timerState.running = true;
         appState.game.timerState.startTime = Date.now();
-        appState.game.timerState.elapsed = 0;
+        appState.game.elapsed = 0;
         appState.game.turn = firstPlayerId;
+        
+        Object.keys(appState.game.players).forEach(id => {
+            if (!appState.game.wins[id]) {
+                appState.game.wins[id] = 0;
+            }
+        });
 
         if (appState.game.timerType === 'chess') {
             Object.keys(appState.game.players).forEach(id => {
@@ -1037,8 +1152,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.timer-type-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
         appState.game.timerType = btn.dataset.timer;
-        document.getElementById('countdown-timer-settings').style.display = appState.game.timerType === 'countdown' ? 'block' : 'none';
-        document.getElementById('chess-timer-settings').style.display = appState.game.timerType === 'chess' ? 'block' : 'none';
+        const isCountdown = appState.game.timerType === 'countdown';
+        document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
+        document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
+        document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
+        if (!isCountdown) {
+            appState.game.gameMode = 'basic';
+        }
+    }));
+    document.querySelectorAll('.game-mode-btn').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelectorAll('.game-mode-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
+        btn.classList.replace('bg-gray-600', 'bg-blue-600');
+        appState.game.gameMode = btn.dataset.mode;
     }));
     document.getElementById('cancel-settings-btn').addEventListener('click', () => hideModal('gameSettingsModal'));
     document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
@@ -1089,12 +1214,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (appState.isHost) {
                 if (myPrizes.length >= appState.game.prizeCount) {
-                    appState.game.status = 'finished';
-                    appState.game.timerState.running = false;
-                    playBuzzer();
+                    handleGameWin(appState.myId);
+                } else {
+                    broadcastGameState();
+                    fullRender();
                 }
-                broadcastGameState();
-                fullRender();
             } else {
                 appState.channel.trigger('client-update-prizes', { prizes: myPrizes });
             }
@@ -1164,10 +1288,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('cancel-issue-win-btn').addEventListener('click', () => hideModal('issueWinModal'));
 
+    document.getElementById('time-expired-options').addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON') return;
+        const decision = e.target.dataset.playerId;
+        hideModal('time-expired-modal');
+
+        const pIds = Object.keys(appState.game.players);
+        const p1Id = pIds[0];
+        const p2Id = pIds[1];
+        const p1Wins = appState.game.wins[p1Id] || 0;
+        const p2Wins = appState.game.wins[p2Id] || 0;
+
+        if (decision === 'tie') {
+            if (p1Wins > p2Wins) appState.game.roundWinnerId = p1Id;
+            else if (p2Wins > p1Wins) appState.game.roundWinnerId = p2Id;
+            else appState.game.isTie = true;
+        } else {
+            const awardedWinnerId = decision;
+            const currentWins = appState.game.wins[awardedWinnerId] || 0;
+            const opponentId = pIds.find(id => id !== awardedWinnerId);
+            const opponentWins = appState.game.wins[opponentId] || 0;
+
+            if (currentWins + 1 >= 2) {
+                appState.game.roundWinnerId = awardedWinnerId;
+            } else if (currentWins === 0 && opponentWins === 0) {
+                appState.game.roundWinnerId = awardedWinnerId;
+            } else {
+                appState.game.isTie = true;
+            }
+        }
+        
+        appState.game.status = 'finished';
+        broadcastGameState();
+        fullRender();
+    });
+
+    const startNextGame = () => {
+        Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
+        appState.game.status = 'active';
+        appState.game.currentGame++;
+        appState.winnerAnnounced = false;
+        appState.game.winnerId = null;
+        hideModal('winnerModal');
+        broadcastGameState();
+        fullRender();
+    };
+
     const restartRound = () => {
         Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
         appState.game.status = 'waiting';
         appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
+        appState.game.wins = {};
+        appState.game.currentGame = 1;
+        appState.game.roundWinnerId = null;
+        appState.game.isTie = false;
+        appState.game.winnerId = null;
         if(timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
@@ -1181,6 +1356,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('winner-modal-buttons').addEventListener('click', (e) => {
         if (e.target.id === 'play-again-btn' && appState.isHost) {
             restartRound();
+        } else if (e.target.id === 'next-game-btn' && appState.isHost) {
+            startNextGame();
         } else if (e.target.id === 'close-winner-btn' && !appState.isHost) {
             hideModal('winnerModal');
         }
