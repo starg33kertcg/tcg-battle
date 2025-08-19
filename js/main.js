@@ -96,20 +96,28 @@ function addEventListeners() {
     document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
 
     document.getElementById('confirm-create-btn').addEventListener('click', () => {
-        // Build a fresh game settings object directly from the UI to ensure accuracy
+        // Build a completely new game settings object from the UI to ensure accuracy
         const finalGameSettings = {
-            ...appState.game, // Start with defaults
-            tcg: appState.game.tcg,
+            // Keep non-setting properties from the default state
             status: 'waiting',
+            currentGame: 1,
+            wins: {},
+            roundWinnerId: null,
+            isTie: false,
+            winnerId: null,
+            winnerAnnounced: false,
+            players: {},
+            turn: null,
+            timerState: { running: false, startTime: null, elapsed: 0, playerTimes: {} },
+
+            // Read all settings directly from the UI
+            tcg: appState.game.tcg, // tcg is set when the modal opens
             prizeCount: parseInt(document.querySelector('.prize-option-btn.bg-blue-600').dataset.prizes, 10),
             loreToWin: parseInt(document.getElementById('lore-to-win-input').value, 10),
             timerType: document.querySelector('.timer-type-btn.bg-blue-600').dataset.timer,
             countdownMinutes: parseInt(document.getElementById('countdown-minutes').value, 10),
             chessMinutes: parseInt(document.getElementById('chess-minutes').value, 10),
             gameMode: document.querySelector('.game-mode-btn.bg-blue-600').dataset.mode,
-            players: {},
-            turn: null,
-            timerState: { running: false, startTime: null, elapsed: 0, playerTimes: {} }
         };
         
         if (finalGameSettings.timerType === 'chess') {
@@ -121,7 +129,7 @@ function addEventListeners() {
             isHost: true,
             playerName: document.getElementById('player-name-input').value || appState.playerName,
             view: 'gameRoom',
-            game: finalGameSettings // Use the fresh settings object
+            game: finalGameSettings // Use the completely fresh settings object
         };
         
         sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
