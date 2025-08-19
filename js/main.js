@@ -22,23 +22,12 @@ async function init() {
         return;
     }
     
-    // If there is a session or presenter code, load session data first
+    // If there is a session or presenter code, load basic session data first
     if (savedSession) {
         const sessionData = JSON.parse(savedSession);
         appState.roomCode = sessionData.roomCode;
         appState.isHost = sessionData.isHost;
         appState.playerName = sessionData.playerName;
-        
-        if (sessionData.isHost) {
-            const savedGameState = localStorage.getItem(`tcgBattleState-${appState.roomCode}`);
-            if (savedGameState) {
-                // If rejoining a game in progress, load state from localStorage
-                appState.game = JSON.parse(savedGameState);
-            } else if (sessionData.game) {
-                // On first creation, load the game settings from sessionStorage
-                appState.game = sessionData.game;
-            }
-        }
     } else if (presenterCode) {
         appState.isHost = false;
         appState.myId = `presenter_${Date.now()}`;
@@ -47,13 +36,15 @@ async function init() {
     const pusherReady = await initializePusher();
     if (!pusherReady) return;
 
+    // Pass initial game settings from session storage to the subscription logic
+    const initialGameSettings = savedSession ? JSON.parse(savedSession).game : null;
+
     if (presenterCode) {
-        subscribeToChannel(presenterCode);
+        subscribeToChannel(presenterCode, null); // Presenter doesn't need initial settings
         showView('presenter');
     } else if (savedSession) {
-        subscribeToChannel(appState.roomCode);
+        subscribeToChannel(appState.roomCode, initialGameSettings);
         showView(JSON.parse(savedSession).view);
-        fullRender();
     }
     
     addEventListeners();
