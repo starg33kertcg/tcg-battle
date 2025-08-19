@@ -84,17 +84,14 @@ function addEventListeners() {
         document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
         document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
         
-        // If chess clock is selected, game mode must be basic
         if (!isCountdown) {
             appState.game.gameMode = 'basic';
-            // Visually reset the game mode buttons to 'Basic Swiss'
             document.querySelector('.game-mode-btn[data-mode="basic"]').classList.replace('bg-gray-600', 'bg-blue-600');
             document.querySelector('.game-mode-btn[data-mode="bestOfThree"]').classList.replace('bg-blue-600', 'bg-gray-600');
         }
     }));
 
     document.querySelectorAll('.game-mode-btn').forEach(btn => btn.addEventListener('click', () => {
-        // Only allow changing game mode if timer is countdown
         if (appState.game.timerType === 'countdown') {
             document.querySelectorAll('.game-mode-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
             btn.classList.replace('bg-gray-600', 'bg-blue-600');
@@ -116,10 +113,10 @@ function addEventListeners() {
             isHost: true,
             playerName: appState.playerName,
             view: 'gameRoom',
-            game: appState.game // Save initial settings
+            game: appState.game 
         };
         sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
-        window.location.reload(); // Reload to initialize the session
+        window.location.reload();
     });
 
     document.getElementById('confirm-join-btn').addEventListener('click', () => {
