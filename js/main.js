@@ -22,12 +22,14 @@ async function init() {
         return;
     }
     
+    let initialGameSettings = null;
     // If there is a session or presenter code, load basic session data first
     if (savedSession) {
         const sessionData = JSON.parse(savedSession);
         appState.roomCode = sessionData.roomCode;
         appState.isHost = sessionData.isHost;
         appState.playerName = sessionData.playerName;
+        initialGameSettings = sessionData.game; // Get initial settings here
     } else if (presenterCode) {
         appState.isHost = false;
         appState.myId = `presenter_${Date.now()}`;
@@ -35,9 +37,6 @@ async function init() {
 
     const pusherReady = await initializePusher();
     if (!pusherReady) return;
-
-    // Pass initial game settings from session storage to the subscription logic
-    const initialGameSettings = savedSession ? JSON.parse(savedSession).game : null;
 
     if (presenterCode) {
         subscribeToChannel(presenterCode, null); // Presenter doesn't need initial settings
