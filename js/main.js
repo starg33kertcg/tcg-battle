@@ -66,31 +66,29 @@ function addEventListeners() {
     document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
-        appState.game.prizeCount = parseInt(btn.dataset.prizes);
     }));
     
     document.querySelectorAll('.timer-type-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.timer-type-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
-        appState.game.timerType = btn.dataset.timer;
         
-        const isCountdown = appState.game.timerType === 'countdown';
+        const isCountdown = btn.dataset.timer === 'countdown';
         document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
         document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
         document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
         
         if (!isCountdown) {
-            appState.game.gameMode = 'basic';
+            // Visually reset the game mode buttons to 'Basic Swiss'
             document.querySelector('.game-mode-btn[data-mode="basic"]').classList.replace('bg-gray-600', 'bg-blue-600');
             document.querySelector('.game-mode-btn[data-mode="bestOfThree"]').classList.replace('bg-blue-600', 'bg-gray-600');
         }
     }));
 
     document.querySelectorAll('.game-mode-btn').forEach(btn => btn.addEventListener('click', () => {
-        if (appState.game.timerType === 'countdown') {
+        const selectedTimerType = document.querySelector('.timer-type-btn.bg-blue-600').dataset.timer;
+        if (selectedTimerType === 'countdown') {
             document.querySelectorAll('.game-mode-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
             btn.classList.replace('bg-gray-600', 'bg-blue-600');
-            appState.game.gameMode = btn.dataset.mode;
         }
     }));
 
@@ -98,30 +96,34 @@ function addEventListeners() {
     document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
 
     document.getElementById('confirm-create-btn').addEventListener('click', () => {
-        // Explicitly read all settings from the UI and state just before creating
-        const selectedTimerType = document.querySelector('.timer-type-btn.bg-blue-600').dataset.timer;
-        const selectedGameMode = document.querySelector('.game-mode-btn.bg-blue-600').dataset.mode;
-
-        appState.playerName = document.getElementById('player-name-input').value || appState.playerName;
-        appState.game.countdownMinutes = parseInt(document.getElementById('countdown-minutes').value) || 30;
-        appState.game.chessMinutes = parseInt(document.getElementById('chess-minutes').value) || 20;
-        appState.game.loreToWin = parseInt(document.getElementById('lore-to-win-input').value) || 20;
+        // Build a fresh game settings object directly from the UI to ensure accuracy
+        const finalGameSettings = {
+            ...appState.game, // Start with defaults
+            tcg: appState.game.tcg,
+            status: 'waiting',
+            prizeCount: parseInt(document.querySelector('.prize-option-btn.bg-blue-600').dataset.prizes, 10),
+            loreToWin: parseInt(document.getElementById('lore-to-win-input').value, 10),
+            timerType: document.querySelector('.timer-type-btn.bg-blue-600').dataset.timer,
+            countdownMinutes: parseInt(document.getElementById('countdown-minutes').value, 10),
+            chessMinutes: parseInt(document.getElementById('chess-minutes').value, 10),
+            gameMode: document.querySelector('.game-mode-btn.bg-blue-600').dataset.mode,
+            players: {},
+            turn: null,
+            timerState: { running: false, startTime: null, elapsed: 0, playerTimes: {} }
+        };
         
-        // Explicitly set the timerType and gameMode from the final UI selection
-        appState.game.timerType = selectedTimerType;
-        if (selectedTimerType === 'countdown') {
-            appState.game.gameMode = selectedGameMode;
-        } else {
-            appState.game.gameMode = 'basic'; // Force basic for chess clock
+        if (finalGameSettings.timerType === 'chess') {
+            finalGameSettings.gameMode = 'basic';
         }
 
         const sessionData = {
             roomCode: Math.floor(10000 + Math.random() * 90000).toString(),
             isHost: true,
-            playerName: appState.playerName,
+            playerName: document.getElementById('player-name-input').value || appState.playerName,
             view: 'gameRoom',
-            game: appState.game 
+            game: finalGameSettings // Use the fresh settings object
         };
+        
         sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
         window.location.reload();
     });
