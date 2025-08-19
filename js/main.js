@@ -28,10 +28,15 @@ async function init() {
         appState.roomCode = sessionData.roomCode;
         appState.isHost = sessionData.isHost;
         appState.playerName = sessionData.playerName;
+        
         if (sessionData.isHost) {
             const savedGameState = localStorage.getItem(`tcgBattleState-${appState.roomCode}`);
             if (savedGameState) {
+                // If rejoining a game in progress, load state from localStorage
                 appState.game = JSON.parse(savedGameState);
+            } else if (sessionData.game) {
+                // On first creation, load the game settings from sessionStorage
+                appState.game = sessionData.game;
             }
         }
     } else if (presenterCode) {
