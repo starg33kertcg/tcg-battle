@@ -96,9 +96,9 @@ function addEventListeners() {
     document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
 
     document.getElementById('confirm-create-btn').addEventListener('click', () => {
-        // Build a completely new game settings object from the UI to ensure accuracy
+        // Build a fresh game settings object directly from the UI to ensure accuracy
         const finalGameSettings = {
-            // Keep non-setting properties from the default state
+            // These properties are not set in the modal, so they can be initialized here
             status: 'waiting',
             currentGame: 1,
             wins: {},
@@ -110,8 +110,8 @@ function addEventListeners() {
             turn: null,
             timerState: { running: false, startTime: null, elapsed: 0, playerTimes: {} },
 
-            // Read all settings directly from the UI
-            tcg: appState.game.tcg, // tcg is set when the modal opens
+            // Read all settings directly from the UI elements
+            tcg: appState.game.tcg, // This is set when the modal opens
             prizeCount: parseInt(document.querySelector('.prize-option-btn.bg-blue-600').dataset.prizes, 10),
             loreToWin: parseInt(document.getElementById('lore-to-win-input').value, 10),
             timerType: document.querySelector('.timer-type-btn.bg-blue-600').dataset.timer,
