@@ -98,10 +98,22 @@ function addEventListeners() {
     document.getElementById('cancel-join-btn').addEventListener('click', () => hideModal('joinSessionModal'));
 
     document.getElementById('confirm-create-btn').addEventListener('click', () => {
+        // Explicitly read all settings from the UI and state just before creating
+        const selectedTimerType = document.querySelector('.timer-type-btn.bg-blue-600').dataset.timer;
+        const selectedGameMode = document.querySelector('.game-mode-btn.bg-blue-600').dataset.mode;
+
         appState.playerName = document.getElementById('player-name-input').value || appState.playerName;
         appState.game.countdownMinutes = parseInt(document.getElementById('countdown-minutes').value) || 30;
         appState.game.chessMinutes = parseInt(document.getElementById('chess-minutes').value) || 20;
         appState.game.loreToWin = parseInt(document.getElementById('lore-to-win-input').value) || 20;
+        
+        // Explicitly set the timerType and gameMode from the final UI selection
+        appState.game.timerType = selectedTimerType;
+        if (selectedTimerType === 'countdown') {
+            appState.game.gameMode = selectedGameMode;
+        } else {
+            appState.game.gameMode = 'basic'; // Force basic for chess clock
+        }
 
         const sessionData = {
             roomCode: Math.floor(10000 + Math.random() * 90000).toString(),
