@@ -172,7 +172,7 @@
                     <!-- New Feature: Additional Tracking Toggle -->
                     <div id="additional-tracking-settings" class="hidden">
                         <label class="font-bold flex items-center">
-                            Enable Additional Tracking?
+                            Additional Tracking
                             <span class="text-xs text-gray-400 ml-2 font-normal">e.g. Supporter, Energy, Retreat, Stadium</span>
                         </label>
                         <div class="flex space-x-2 mt-1">
@@ -382,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         roomCode: null,
         view: 'home', // home, tcgSelection, gameRoom, presenter
         playerName: `Player${Math.floor(Math.random() * 900 + 100)}`,
+        winnerAnnounced: false, // Client-side flag
         game: {
             tcg: 'pokemon',
             status: 'waiting', // waiting, active, paused, finished, overtime, game-over
@@ -397,7 +398,6 @@ document.addEventListener('DOMContentLoaded', () => {
             roundWinnerId: null,
             isTie: false,
             winnerId: null,
-            winnerAnnounced: false,
             players: {}, // { [id]: { name, prizesTaken: [], loreCount: 0, isHost, color, connected: true, actionsUsed: { supporter, energy, retreat, stadium } } }
             turn: null, // player id
             timerState: {
@@ -879,18 +879,18 @@ let PUSHER_CLUSTER = null;
         }
 
         showModal('winnerModal');
-        appState.game.winnerAnnounced = true;
+        appState.winnerAnnounced = true;
     };
 
     const fullRender = () => {
         renderGameRoom();
         renderPresenter();
 
-        if (appState.game.status === 'finished' && !appState.game.winnerAnnounced) {
+        if (appState.game.status === 'finished' && !appState.winnerAnnounced) {
             // Final match winner
             const winner = appState.game.players[appState.game.winnerId];
             showWinnerAnimation(winner, false, appState.game.isTie); // isRoundWin is false
-        } else if (appState.game.status === 'game-over' && !appState.game.winnerAnnounced) {
+        } else if (appState.game.status === 'game-over' && !appState.winnerAnnounced) {
             // Intermediate game winner in Best-of-Three
             const winner = appState.game.players[appState.game.roundWinnerId];
             showWinnerAnimation(winner, true, false); // isRoundWin is true
@@ -1082,6 +1082,10 @@ let PUSHER_CLUSTER = null;
                 }
 
                 console.log('Guest/Presenter received state update:', data);
+                // When a new game state arrives, if the status is different, reset the announcement flag
+                if (appState.game.status !== data.status) {
+                    appState.winnerAnnounced = false;
+                }
                 appState.game = data;
                 
                 if (!appState.game.timerState.running && timerInterval) {
@@ -1303,7 +1307,7 @@ let PUSHER_CLUSTER = null;
         // Reset state for the new game/round
         appState.game.status = 'active';
         appState.game.turn = firstPlayerId;
-        appState.game.winnerAnnounced = false;
+        appState.winnerAnnounced = false;
         appState.game.roundWinnerId = null;
         appState.game.isTie = false;
 
@@ -1565,7 +1569,7 @@ let PUSHER_CLUSTER = null;
         appState.game.roundWinnerId = null;
         appState.game.isTie = false;
         appState.game.winnerId = null;
-        appState.game.winnerAnnounced = false;
+        appState.winnerAnnounced = false;
         if(timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
