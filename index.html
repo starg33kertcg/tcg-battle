@@ -859,11 +859,12 @@ let PUSHER_CLUSTER = null;
         buttonContainer.innerHTML = '';
         if (appState.isHost) {
             const btn = document.createElement('button');
-            if (appState.game.gameMode === 'bestOfThree' && isRoundWin && appState.game.wins[appState.game.roundWinnerId] < 2) {
+            // If the status is 'game-over', it means a game in a Bo3 series just ended.
+            if (appState.game.status === 'game-over') {
                 btn.id = 'next-game-btn';
                 btn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
                 btn.textContent = 'Next Game';
-            } else {
+            } else { // This covers 'finished' status for both Basic and Bo3 matches.
                 btn.id = 'play-again-btn';
                 btn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
                 btn.textContent = 'Play Again';
@@ -886,11 +887,13 @@ let PUSHER_CLUSTER = null;
         renderPresenter();
 
         if (appState.game.status === 'finished' && !appState.game.winnerAnnounced) {
-            const winner = appState.game.players[appState.game.roundWinnerId];
-            showWinnerAnimation(winner, true, appState.game.isTie);
-        } else if (appState.game.status === 'game-over' && !appState.game.winnerAnnounced) {
+            // Final match winner
             const winner = appState.game.players[appState.game.winnerId];
-            showWinnerAnimation(winner, false, false);
+            showWinnerAnimation(winner, false, appState.game.isTie); // isRoundWin is false
+        } else if (appState.game.status === 'game-over' && !appState.game.winnerAnnounced) {
+            // Intermediate game winner in Best-of-Three
+            const winner = appState.game.players[appState.game.roundWinnerId];
+            showWinnerAnimation(winner, true, false); // isRoundWin is true
         }
     };
 
@@ -1103,26 +1106,28 @@ let PUSHER_CLUSTER = null;
 
     const handleGameWin = (winnerId) => {
         if (!appState.isHost) return;
-        
-        appState.game.winnerId = winnerId;
-        
+
+        // winnerId is the winner of the current game.
+        appState.game.roundWinnerId = winnerId;
+        appState.game.timerState.running = false; // Stop timer for this game.
+
         if (appState.game.gameMode === 'bestOfThree') {
             appState.game.wins[winnerId] = (appState.game.wins[winnerId] || 0) + 1;
-            
+
             if (appState.game.wins[winnerId] >= 2) {
-                appState.game.roundWinnerId = winnerId;
+                // Match is over
+                appState.game.winnerId = winnerId;
                 appState.game.status = 'finished';
-                appState.game.timerState.running = false;
             } else {
-                appState.game.roundWinnerId = winnerId; // Set round winner for the modal
-                appState.game.status = 'game-over'; // Intermediate state
+                // Game is over, but match continues
+                appState.game.status = 'game-over';
             }
         } else {
-            appState.game.roundWinnerId = winnerId;
+            // Basic mode, game and match are over
+            appState.game.winnerId = winnerId;
             appState.game.status = 'finished';
-            appState.game.timerState.running = false;
         }
-        
+
         playBuzzer();
         broadcastGameState();
         fullRender();
@@ -1289,10 +1294,10 @@ let PUSHER_CLUSTER = null;
     const startGameWithFirstPlayer = (firstPlayerId, isFirstGame = true) => {
         if (!appState.isHost) return;
 
+        // Reset state for the new game/round
         appState.game.status = 'active';
         appState.game.turn = firstPlayerId;
         appState.game.winnerAnnounced = false;
-        appState.game.winnerId = null;
         appState.game.roundWinnerId = null;
         appState.game.isTie = false;
 
@@ -1303,25 +1308,28 @@ let PUSHER_CLUSTER = null;
         });
 
         if (isFirstGame) {
-            appState.game.timerState.running = true;
+            // Reset state for the entire match
             appState.game.timerState.startTime = Date.now();
             appState.game.timerState.elapsed = 0;
             appState.game.currentGame = 1;
             appState.game.wins = {};
-            
+            appState.game.winnerId = null; // Reset overall match winner only on the very first game
             Object.keys(appState.game.players).forEach(id => {
                 appState.game.wins[id] = 0;
             });
-
             if (appState.game.timerType === 'chess') {
                 Object.keys(appState.game.players).forEach(id => {
                     appState.game.timerState.playerTimes[id] = appState.game.chessMinutes * 60 * 1000;
                 });
             }
-            startTimer();
         } else {
+            // Just advance to the next game in the match
             appState.game.currentGame++;
         }
+
+        // Always start/resume the timer for the new game
+        appState.game.timerState.running = true;
+        startTimer();
 
         broadcastGameState();
         fullRender();
