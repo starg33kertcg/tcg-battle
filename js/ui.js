@@ -66,16 +66,14 @@ export const hideModal = (modalName) => {
 export const setupGameSettings = (tcg) => {
     appState.game.tcg = tcg;
     document.getElementById('player-name-input').value = appState.playerName;
-    showModal('gameSettingsModal');
     
+    // Set UI based on TCG
     const isPokemon = tcg === 'pokemon';
     document.getElementById('prize-card-settings').style.display = isPokemon ? 'block' : 'none';
     document.getElementById('lorcana-lore-settings').style.display = isPokemon ? 'none' : 'block';
 
-    const isCountdown = appState.game.timerType === 'countdown';
-    document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
-    document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
-    document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
+    // Show the modal. The event listeners in main.js will handle the timer UI.
+    showModal('gameSettingsModal');
 };
 
 // --- RENDER FUNCTIONS ---
