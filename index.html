@@ -998,6 +998,12 @@ let PUSHER_CLUSTER = null;
                         connected: true
                     };
                     
+                    // FIX: Transfer win count to the new player ID
+                    if (appState.game.wins[oldId] !== undefined) {
+                        appState.game.wins[member.id] = appState.game.wins[oldId];
+                        delete appState.game.wins[oldId];
+                    }
+
                     if (appState.game.timerType === 'chess') {
                         const oldTime = appState.game.timerState.playerTimes[oldId];
                         if (oldTime !== undefined) {
