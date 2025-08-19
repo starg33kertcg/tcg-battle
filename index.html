@@ -26,22 +26,22 @@
         @keyframes pulse-green { 0% { box-shadow: 0 0 15px 4px #22c55e; } 70% { box-shadow: 0 0 20px 6px #16a34a; } 100% { box-shadow: 0 0 15px 4px #22c55e; } }
         .modal-backdrop { background-color: rgba(0,0,0,0.75); }
 
-        /* New Presenter Styles */
+        /* Presenter Styles */
         .presenter-prize-container {
             position: relative;
-            width: 450px; /* Increased container size for larger arc */
+            width: 450px; 
             height: 450px;
         }
         .presenter-prize-pokeball {
             position: absolute;
             left: 50%;
             top: 50%;
-            margin: -32px; /* Half of new width/height */
-            width: 64px;   /* Increased size */
-            height: 64px;  /* Increased size */
+            margin: -32px; 
+            width: 64px;   
+            height: 64px;  
             border-radius: 50%;
             background: linear-gradient(to bottom, #ef4444 0%, #ef4444 50%, #f9fafb 50%, #f9fafb 100%);
-            border: 3px solid #1f2937; /* Thicker border */
+            border: 3px solid #1f2937; 
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -50,18 +50,18 @@
         .presenter-prize-pokeball::before {
             content: '';
             position: absolute;
-            height: 8px; /* Thicker line */
+            height: 8px; 
             width: 100%;
             background: #1f2937;
         }
         .presenter-prize-pokeball::after {
             content: '';
             position: absolute;
-            height: 22px; /* Larger button */
-            width: 22px;  /* Larger button */
+            height: 22px; 
+            width: 22px;  
             border-radius: 50%;
             background: #f9fafb;
-            border: 5px solid #1f2937; /* Thicker border */
+            border: 5px solid #1f2937; 
         }
         .presenter-prize-pokeball.taken {
             filter: grayscale(100%);
@@ -80,6 +80,29 @@
         /* Lorcana Styles */
         .lore-icon-glow {
             filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+        }
+
+        /* New Feature: Additional Tracking Styles */
+        .action-btn.used {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+        .presenter-action-emblem {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+            color: white;
+            border: 2px solid #9ca3af;
+            transition: all 0.3s ease;
+        }
+        .presenter-action-emblem.used {
+            opacity: 0.3;
+            filter: grayscale(80%);
         }
     </style>
 </head>
@@ -146,6 +169,17 @@
                             <button data-prizes="4" class="prize-option-btn flex-1 bg-gray-600 text-white rounded p-2">4 (Pre-Release)</button>
                         </div>
                     </div>
+                    <!-- New Feature: Additional Tracking Toggle -->
+                    <div id="additional-tracking-settings" class="hidden">
+                        <label class="font-bold flex items-center">
+                            Enable Additional Tracking?
+                            <span class="text-xs text-gray-400 ml-2 font-normal">e.g. Supporter, Energy, Retreat, Stadium</span>
+                        </label>
+                        <div class="flex space-x-2 mt-1">
+                            <button data-tracking="false" class="tracking-option-btn flex-1 bg-blue-600 text-white rounded p-2">Disable</button>
+                            <button data-tracking="true" class="tracking-option-btn flex-1 bg-gray-600 text-white rounded p-2">Enable</button>
+                        </div>
+                    </div>
                     <div id="lorcana-lore-settings" class="hidden">
                         <label class="font-bold">Lore to Win</label>
                         <input type="number" id="lore-to-win-input" value="20" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
@@ -204,7 +238,7 @@
             <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
                 <h2 class="text-2xl font-bold mb-4">Who Goes First?</h2>
                 <div id="first-player-options" class="space-y-3">
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -214,7 +248,7 @@
                 <h2 id="winner-title" class="text-4xl font-bold mb-2">WINNER!</h2>
                 <p id="winner-name" class="text-3xl font-bangers tracking-wider"></p>
                 <div id="winner-modal-buttons" class="mt-6">
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -240,7 +274,7 @@
                 <div class="relative">
                     <button id="game-menu-btn" class="p-2"><i class="fas fa-bars fa-lg"></i></button>
                     <div id="game-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-20">
-                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -266,6 +300,13 @@
                     <div id="timer-display-controls" class="mb-4 text-center"></div>
                     
                     <div id="pokemon-controls">
+                        <!-- New Feature: Additional Tracking Buttons -->
+                        <div id="additional-tracking-buttons" class="hidden grid grid-cols-4 gap-2 mb-4">
+                            <button data-action="supporter" class="action-btn bg-blue-500 hover:bg-blue-600 rounded p-2 font-bold transition-all">Supporter</button>
+                            <button data-action="energy" class="action-btn bg-yellow-500 hover:bg-yellow-600 rounded p-2 font-bold transition-all">Energy</button>
+                            <button data-action="retreat" class="action-btn bg-green-500 hover:bg-green-600 rounded p-2 font-bold transition-all">Retreat</button>
+                            <button data-action="stadium" class="action-btn bg-purple-500 hover:bg-purple-600 rounded p-2 font-bold transition-all">Stadium</button>
+                        </div>
                         <h3 class="font-bold text-xl mb-2">Your Prize Cards</h3>
                         <div id="prize-card-grid" class="grid grid-cols-2 gap-3">
                         </div>
@@ -289,6 +330,8 @@
                     <div id="presenter-p1-side" class="flex-1 flex flex-col items-center">
                         <div id="presenter-p1-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p1-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 1</h2>
+                        <!-- New Feature: Presenter Emblems -->
+                        <div id="presenter-p1-actions" class="hidden mt-2 space-x-2"></div>
                         <p id="presenter-p1-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                         <div id="presenter-p1-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
                     </div>
@@ -301,6 +344,8 @@
                     <div id="presenter-p2-side" class="flex-1 flex flex-col items-center">
                         <div id="presenter-p2-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p2-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 2</h2>
+                        <!-- New Feature: Presenter Emblems -->
+                        <div id="presenter-p2-actions" class="hidden mt-2 space-x-2"></div>
                         <p id="presenter-p2-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                         <div id="presenter-p2-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
                     </div>
@@ -310,12 +355,12 @@
                 <div id="presenter-p2-prizes" class="presenter-prize-container absolute right-0 top-1/2 -translate-y-1/2"></div>
                 
                  <div id="presenter-timer-container" class="absolute bottom-[-80px] left-1/2 -translate-x-1/2 bg-black rounded-lg px-6 py-2 border-2 border-gray-600">
-                    <div id="presenter-timer" class="text-5xl md:text-6xl font-mono font-bold tabular-nums text-yellow-300">00:00</div>
-                    <div id="presenter-chess-timers" class="hidden w-full flex justify-around gap-8 text-4xl md:text-5xl font-mono font-bold tabular-nums">
-                        <div id="presenter-chess-p1">00:00</div>
-                        <div id="presenter-chess-p2">00:00</div>
-                    </div>
-                </div>
+                     <div id="presenter-timer" class="text-5xl md:text-6xl font-mono font-bold tabular-nums text-yellow-300">00:00</div>
+                     <div id="presenter-chess-timers" class="hidden w-full flex justify-around gap-8 text-4xl md:text-5xl font-mono font-bold tabular-nums">
+                         <div id="presenter-chess-p1">00:00</div>
+                         <div id="presenter-chess-p2">00:00</div>
+                     </div>
+                 </div>
             </div>
             <div class="absolute top-4 right-4 text-sm text-gray-300">Room: <span id="presenter-room-code" class="font-bold"></span></div>
             <button id="fullscreen-btn" class="absolute top-4 left-4 text-white bg-black bg-opacity-25 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-50">
@@ -339,20 +384,21 @@ document.addEventListener('DOMContentLoaded', () => {
         playerName: `Player${Math.floor(Math.random() * 900 + 100)}`,
         game: {
             tcg: 'pokemon',
-            status: 'waiting', // waiting, active, paused, finished, overtime
+            status: 'waiting', // waiting, active, paused, finished, overtime, game-over
             prizeCount: 6,
             loreToWin: 20,
             timerType: 'countdown', // countdown, chess
             countdownMinutes: 30,
             chessMinutes: 20,
             gameMode: 'basic', // basic, bestOfThree
+            additionalTrackingEnabled: false, // New Feature
             currentGame: 1,
             wins: {}, // { [playerId]: winCount }
             roundWinnerId: null,
             isTie: false,
             winnerId: null,
             winnerAnnounced: false,
-            players: {}, // { [id]: { name, prizesTaken: [], loreCount: 0, isHost, color, connected: true } }
+            players: {}, // { [id]: { name, prizesTaken: [], loreCount: 0, isHost, color, connected: true, actionsUsed: { supporter, energy, retreat, stadium } } }
             turn: null, // player id
             timerState: {
                 running: false,
@@ -394,6 +440,16 @@ let PUSHER_CLUSTER = null;
         const seconds = (totalSeconds % 60).toString().padStart(2, '0');
         return `${minutes}:${seconds}`;
     };
+    const createPlayerObject = (name, isHost, color) => ({
+        name,
+        isHost,
+        color,
+        prizesTaken: [],
+        loreCount: 0,
+        connected: true,
+        actionsUsed: { supporter: false, energy: false, retreat: false, stadium: false }
+    });
+
 
     // --- VIEW MANAGEMENT ---
     const showView = (viewName) => {
@@ -466,6 +522,7 @@ let PUSHER_CLUSTER = null;
             document.getElementById('pokemon-controls').classList.remove('hidden');
             document.getElementById('lorcana-controls').classList.add('hidden');
             renderPrizeCards(me);
+            renderAdditionalTracking(me); // New Feature
             if (p1Id && game.players[p1Id]) {
                 const p1 = game.players[p1Id];
                 const p1PrizesLeft = game.prizeCount - p1.prizesTaken.length;
@@ -534,6 +591,24 @@ let PUSHER_CLUSTER = null;
             card.disabled = appState.game.status !== 'active';
             prizeGrid.appendChild(card);
         }
+    };
+
+    // New Feature: Render Additional Tracking Buttons
+    const renderAdditionalTracking = (me) => {
+        const container = document.getElementById('additional-tracking-buttons');
+        if (!appState.game.additionalTrackingEnabled) {
+            container.classList.add('hidden');
+            return;
+        }
+        container.classList.remove('hidden');
+
+        const isMyTurn = appState.myId === appState.game.turn;
+        
+        container.querySelectorAll('.action-btn').forEach(btn => {
+            const action = btn.dataset.action;
+            btn.classList.toggle('used', me.actionsUsed[action]);
+            btn.disabled = !isMyTurn || appState.game.status !== 'active';
+        });
     };
 
     const renderLorcanaControls = (me) => {
@@ -612,8 +687,8 @@ let PUSHER_CLUSTER = null;
         const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
         const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
         
-        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, color: '#cccccc' };
-        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, color: '#cccccc' };
+        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, color: '#cccccc', actionsUsed: {} };
+        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, color: '#cccccc', actionsUsed: {} };
 
         document.getElementById('presenter-p1-name').textContent = p1.name;
         document.getElementById('presenter-p2-name').textContent = p2.name;
@@ -642,19 +717,24 @@ let PUSHER_CLUSTER = null;
         if (game.tcg === 'lorcana') {
             document.getElementById('presenter-p1-prizes').classList.add('hidden');
             document.getElementById('presenter-p2-prizes').classList.add('hidden');
+            document.getElementById('presenter-p1-actions').classList.add('hidden'); // New
+            document.getElementById('presenter-p2-actions').classList.add('hidden'); // New
             const p1Lore = document.getElementById('presenter-p1-lore');
             const p2Lore = document.getElementById('presenter-p2-lore');
             p1Lore.classList.remove('hidden');
             p2Lore.classList.remove('hidden');
             p1Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p1.loreCount} Lore</span>`;
             p2Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p2.loreCount} Lore</span>`;
-        } else {
+        } else { // Pokemon
             document.getElementById('presenter-p1-prizes').classList.remove('hidden');
             document.getElementById('presenter-p2-prizes').classList.remove('hidden');
             document.getElementById('presenter-p1-lore').classList.add('hidden');
             document.getElementById('presenter-p2-lore').classList.add('hidden');
             renderPrizesInArc(p1, 'presenter-p1-prizes', true);
             renderPrizesInArc(p2, 'presenter-p2-prizes', false);
+            // New Feature: Render Presenter Emblems
+            renderPresenterActions(p1, 'presenter-p1-actions');
+            renderPresenterActions(p2, 'presenter-p2-actions');
         }
 
         const countdownTimerEl = document.getElementById('presenter-timer');
@@ -703,6 +783,22 @@ let PUSHER_CLUSTER = null;
             if(taken) prizeEl.classList.add('taken');
             container.appendChild(prizeEl);
         }
+    };
+
+    // New Feature: Render Presenter Action Emblems
+    const renderPresenterActions = (player, containerId) => {
+        const container = document.getElementById(containerId);
+        if (!appState.game.additionalTrackingEnabled) {
+            container.classList.add('hidden');
+            return;
+        }
+        container.classList.remove('hidden');
+        container.innerHTML = `
+            <div class="presenter-action-emblem ${player.actionsUsed.supporter ? 'used' : ''}" style="background-color: #3b82f6;">Su</div>
+            <div class="presenter-action-emblem ${player.actionsUsed.energy ? 'used' : ''}" style="background-color: #eab308;">En</div>
+            <div class="presenter-action-emblem ${player.actionsUsed.retreat ? 'used' : ''}" style="background-color: #22c55e;">Re</div>
+            <div class="presenter-action-emblem ${player.actionsUsed.stadium ? 'used' : ''}" style="background-color: #8b5cf6;">St</div>
+        `;
     };
 
     const renderChooseFirstPlayerModal = () => {
@@ -763,7 +859,7 @@ let PUSHER_CLUSTER = null;
         buttonContainer.innerHTML = '';
         if (appState.isHost) {
             const btn = document.createElement('button');
-            if (appState.game.gameMode === 'bestOfThree' && !isRoundWin && !isTie) {
+            if (appState.game.gameMode === 'bestOfThree' && isRoundWin && appState.game.wins[appState.game.roundWinnerId] < 2) {
                 btn.id = 'next-game-btn';
                 btn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
                 btn.textContent = 'Next Game';
@@ -845,7 +941,7 @@ let PUSHER_CLUSTER = null;
             if (appState.isHost) {
                 console.log("I am the host.");
                 if (Object.keys(appState.game.players).length === 0) {
-                    appState.game.players[appState.myId] = { name: appState.playerName, prizesTaken: [], loreCount: 0, isHost: true, color: avatarColors[0], connected: true };
+                    appState.game.players[appState.myId] = createPlayerObject(appState.playerName, true, avatarColors[0]);
                 }
                 
                 if(appState.game.players[appState.myId]) {
@@ -894,11 +990,8 @@ let PUSHER_CLUSTER = null;
                     delete appState.game.players[oldId];
 
                     appState.game.players[member.id] = {
-                        name: playerData.name,
-                        prizesTaken: playerData.prizesTaken,
-                        loreCount: playerData.loreCount,
+                        ...playerData, // Copy all existing data
                         isHost: false, // Force guest status on reconnect
-                        color: playerData.color,
                         connected: true
                     };
                     
@@ -922,14 +1015,7 @@ let PUSHER_CLUSTER = null;
                     }
                 } else if (Object.keys(appState.game.players).length < 2) {
                     console.log('New player is joining...');
-                    appState.game.players[member.id] = {
-                        name: member.info.playerName,
-                        prizesTaken: [],
-                        loreCount: 0,
-                        isHost: false,
-                        color: avatarColors[1],
-                        connected: true
-                    };
+                    appState.game.players[member.id] = createPlayerObject(member.info.playerName, false, avatarColors[1]);
                 } else {
                     console.log("Spectator/Presenter joined. Not adding to game.");
                 }
@@ -941,41 +1027,41 @@ let PUSHER_CLUSTER = null;
 
         appState.channel.bind('pusher:member_removed', (member) => {
              if (appState.isHost) {
-                console.log('Host saw member removed:', member.id);
-                const player = appState.game.players[member.id];
-                if (player) {
-                    player.connected = false;
-                    appState.game.status = 'paused';
-                    appState.game.timerState.running = false;
-                    broadcastGameState();
-                    fullRender();
-                }
-            } else {
-                const removedPlayer = appState.game.players[member.id];
-                if (removedPlayer && removedPlayer.isHost) {
-                    console.log("Host disconnected. Guest is becoming the new host.");
-                    appState.isHost = true;
-                    
-                    const sessionData = JSON.parse(sessionStorage.getItem('tcgBattleSession'));
-                    if (sessionData) {
-                        sessionData.isHost = true;
-                        sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
-                    }
-                    
-                    const myPlayerData = appState.game.players[appState.myId];
-                    myPlayerData.isHost = true;
-                    myPlayerData.connected = true;
+                 console.log('Host saw member removed:', member.id);
+                 const player = appState.game.players[member.id];
+                 if (player) {
+                     player.connected = false;
+                     appState.game.status = 'paused';
+                     appState.game.timerState.running = false;
+                     broadcastGameState();
+                     fullRender();
+                 }
+             } else {
+                 const removedPlayer = appState.game.players[member.id];
+                 if (removedPlayer && removedPlayer.isHost) {
+                     console.log("Host disconnected. Guest is becoming the new host.");
+                     appState.isHost = true;
+                     
+                     const sessionData = JSON.parse(sessionStorage.getItem('tcgBattleSession'));
+                     if (sessionData) {
+                         sessionData.isHost = true;
+                         sessionStorage.setItem('tcgBattleSession', JSON.stringify(sessionData));
+                     }
+                     
+                     const myPlayerData = appState.game.players[appState.myId];
+                     myPlayerData.isHost = true;
+                     myPlayerData.connected = true;
 
-                    removedPlayer.connected = false; 
+                     removedPlayer.connected = false; 
 
-                    appState.game.status = 'paused';
-                    appState.game.timerState.running = false;
-                    
-                    broadcastGameState();
-                    fullRender();
-                    bindHostEvents();
-                }
-            }
+                     appState.game.status = 'paused';
+                     appState.game.timerState.running = false;
+                     
+                     broadcastGameState();
+                     fullRender();
+                     bindHostEvents();
+                 }
+             }
         });
         
         appState.channel.bind('client-state-update', (data) => {
@@ -1028,6 +1114,7 @@ let PUSHER_CLUSTER = null;
                 appState.game.status = 'finished';
                 appState.game.timerState.running = false;
             } else {
+                appState.game.roundWinnerId = winnerId; // Set round winner for the modal
                 appState.game.status = 'game-over'; // Intermediate state
             }
         } else {
@@ -1083,6 +1170,7 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-end-turn');
         appState.channel.unbind('client-scoop-game');
         appState.channel.unbind('client-update-lore');
+        appState.channel.unbind('client-update-action'); // New Feature
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
             const playerId = metadata.user_id;
@@ -1111,9 +1199,23 @@ let PUSHER_CLUSTER = null;
             }
         });
 
-        appState.channel.bind('client-end-turn', (data, metadata) => {
+        // New Feature: Handle action updates from guest
+        appState.channel.bind('client-update-action', (data, metadata) => {
             const playerId = metadata.user_id;
-            if (appState.game.turn === playerId) {
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].actionsUsed[data.action] = data.used;
+                broadcastGameState();
+                fullRender();
+            }
+        });
+
+        appState.channel.bind('client-end-turn', (data, metadata) => {
+            const previousPlayerId = metadata.user_id;
+            if (appState.game.turn === previousPlayerId) {
+                // Reset actions for the player whose turn just ended
+                if (appState.game.players[previousPlayerId]) {
+                    appState.game.players[previousPlayerId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
+                }
                 appState.game.turn = data.turn;
                 broadcastGameState();
                 fullRender();
@@ -1191,16 +1293,24 @@ let PUSHER_CLUSTER = null;
         appState.game.turn = firstPlayerId;
         appState.game.winnerAnnounced = false;
         appState.game.winnerId = null;
+        appState.game.roundWinnerId = null;
+        appState.game.isTie = false;
+
+        Object.values(appState.game.players).forEach(p => {
+            p.prizesTaken = [];
+            p.loreCount = 0;
+            p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
+        });
 
         if (isFirstGame) {
             appState.game.timerState.running = true;
             appState.game.timerState.startTime = Date.now();
             appState.game.timerState.elapsed = 0;
+            appState.game.currentGame = 1;
+            appState.game.wins = {};
             
             Object.keys(appState.game.players).forEach(id => {
-                if (!appState.game.wins[id]) {
-                    appState.game.wins[id] = 0;
-                }
+                appState.game.wins[id] = 0;
             });
 
             if (appState.game.timerType === 'chess') {
@@ -1210,7 +1320,6 @@ let PUSHER_CLUSTER = null;
             }
             startTimer();
         } else {
-            Object.values(appState.game.players).forEach(p => p.prizesTaken = []);
             appState.game.currentGame++;
         }
 
@@ -1249,6 +1358,7 @@ let PUSHER_CLUSTER = null;
         
         const isPokemon = tcg === 'pokemon';
         document.getElementById('prize-card-settings').style.display = isPokemon ? 'block' : 'none';
+        document.getElementById('additional-tracking-settings').style.display = isPokemon ? 'block' : 'none'; // New
         document.getElementById('lorcana-lore-settings').style.display = isPokemon ? 'none' : 'block';
 
         const isCountdown = appState.game.timerType === 'countdown';
@@ -1264,6 +1374,12 @@ let PUSHER_CLUSTER = null;
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
         appState.game.prizeCount = parseInt(btn.dataset.prizes);
+    }));
+    // New Feature: Tracking Toggle Handler
+    document.querySelectorAll('.tracking-option-btn').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelectorAll('.tracking-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
+        btn.classList.replace('bg-gray-600', 'bg-blue-600');
+        appState.game.additionalTrackingEnabled = btn.dataset.tracking === 'true';
     }));
     document.querySelectorAll('.timer-type-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.timer-type-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
@@ -1290,6 +1406,7 @@ let PUSHER_CLUSTER = null;
         appState.game.countdownMinutes = parseInt(document.getElementById('countdown-minutes').value) || 30;
         appState.game.chessMinutes = parseInt(document.getElementById('chess-minutes').value) || 20;
         appState.game.loreToWin = parseInt(document.getElementById('lore-to-win-input').value) || 20;
+        // Note: additionalTrackingEnabled is already set by its button handler
 
         const sessionData = {
             roomCode: generateRoomCode(),
@@ -1425,6 +1542,7 @@ let PUSHER_CLUSTER = null;
         Object.values(appState.game.players).forEach(p => {
             p.prizesTaken = [];
             p.loreCount = 0;
+            p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
         });
         appState.game.status = 'waiting';
         appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
@@ -1450,6 +1568,24 @@ let PUSHER_CLUSTER = null;
             startNextGame();
         } else if (e.target.id === 'close-winner-btn' && !appState.isHost) {
             hideModal('winnerModal');
+        }
+    });
+
+    // New Feature: Action Button Click Handler
+    document.getElementById('additional-tracking-buttons').addEventListener('click', (e) => {
+        const btn = e.target.closest('.action-btn');
+        if (!btn) return;
+        
+        const action = btn.dataset.action;
+        const myPlayer = appState.game.players[appState.myId];
+        const isUsed = !myPlayer.actionsUsed[action]; // Toggle the state
+
+        if (appState.isHost) {
+            myPlayer.actionsUsed[action] = isUsed;
+            broadcastGameState();
+            fullRender();
+        } else {
+            appState.channel.trigger('client-update-action', { action, used: isUsed });
         }
     });
 
@@ -1486,6 +1622,8 @@ let PUSHER_CLUSTER = null;
             const otherPlayerId = pIds.find(id => id !== myId);
             
             if (appState.isHost) {
+                // Reset actions for the current player before ending the turn
+                appState.game.players[myId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
                 fullRender();
@@ -1517,58 +1655,63 @@ let PUSHER_CLUSTER = null;
     });
 
 // --- INITIALIZATION ---
-const init = async () => { // Make the function async
-    try {
-        // Fetch the config from our new serverless function
-        const response = await fetch('/.netlify/functions/pusher-config');
-        if (!response.ok) throw new Error('Network response was not ok');
-        const config = await response.json();
-        
-        // Assign the fetched keys to our variables
-        PUSHER_APP_KEY = config.key;
-        PUSHER_CLUSTER = config.cluster;
-
-    } catch (error) {
-        console.error("Could not fetch Pusher config:", error);
-        alert("Error: Could not connect to the real-time server. Please try refreshing the page.");
-        return; // Stop initialization if config fails
-    }
-
+const init = async () => {
+    // First, determine the view and render the basic UI
     const urlParams = new URLSearchParams(window.location.search);
     const presenterCode = urlParams.get('presenter');
     const roomToJoin = urlParams.get('join');
     const savedSession = sessionStorage.getItem('tcgBattleSession');
 
     if (presenterCode) {
-        appState.isHost = false;
-        appState.myId = `presenter_${Date.now()}`;
-        initPusher(PUSHER_APP_KEY, PUSHER_CLUSTER); // Pass the keys
-        subscribeToChannel(presenterCode);
         showView('presenter');
     } else if (savedSession) {
         const sessionData = JSON.parse(savedSession);
-        appState.roomCode = sessionData.roomCode;
-        appState.isHost = sessionData.isHost;
-        appState.playerName = sessionData.playerName;
-        
-        if (sessionData.isHost) {
-            const savedGameState = localStorage.getItem(`tcgBattleState-${appState.roomCode}`);
-            if (savedGameState) {
-                appState.game = JSON.parse(savedGameState);
-            }
-        }
-        
-        initPusher(PUSHER_APP_KEY, PUSHER_CLUSTER); // Pass the keys
-        subscribeToChannel(appState.roomCode);
-        showView(sessionData.view);
-        fullRender();
-
+        showView(sessionData.view || 'home');
     } else if (roomToJoin) {
         document.getElementById('room-code-input').value = roomToJoin;
         showModal('joinSessionModal');
         showView('home');
     } else {
         showView('home');
+    }
+
+    // Now, try to fetch the config and initialize Pusher
+    try {
+        const response = await fetch('/.netlify/functions/pusher-config');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const config = await response.json();
+        
+        PUSHER_APP_KEY = config.key;
+        PUSHER_CLUSTER = config.cluster;
+    } catch (error) {
+        console.error("Could not fetch Pusher config:", error);
+        // Do not block rendering. The user will only see an issue if they try to create/join a game.
+    }
+
+    // Proceed with connection logic only if we have keys and a session
+    if (PUSHER_APP_KEY && (presenterCode || savedSession)) {
+        if (presenterCode) {
+            appState.isHost = false;
+            appState.myId = `presenter_${Date.now()}`;
+            initPusher();
+            subscribeToChannel(presenterCode);
+        } else if (savedSession) {
+            const sessionData = JSON.parse(savedSession);
+            appState.roomCode = sessionData.roomCode;
+            appState.isHost = sessionData.isHost;
+            appState.playerName = sessionData.playerName;
+            
+            if (sessionData.isHost) {
+                const savedGameState = localStorage.getItem(`tcgBattleState-${appState.roomCode}`);
+                if (savedGameState) {
+                    appState.game = JSON.parse(savedGameState);
+                }
+            }
+            
+            initPusher();
+            subscribeToChannel(appState.roomCode);
+            fullRender();
+        }
     }
 };
 
