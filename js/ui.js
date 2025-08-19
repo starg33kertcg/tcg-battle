@@ -63,6 +63,21 @@ export const hideModal = (modalName) => {
     if (views[modalName]) views[modalName].classList.add('hidden');
 };
 
+export const setupGameSettings = (tcg) => {
+    appState.game.tcg = tcg;
+    document.getElementById('player-name-input').value = appState.playerName;
+    showModal('gameSettingsModal');
+    
+    const isPokemon = tcg === 'pokemon';
+    document.getElementById('prize-card-settings').style.display = isPokemon ? 'block' : 'none';
+    document.getElementById('lorcana-lore-settings').style.display = isPokemon ? 'none' : 'block';
+
+    const isCountdown = appState.game.timerType === 'countdown';
+    document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
+    document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
+    document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
+};
+
 // --- RENDER FUNCTIONS ---
 export const fullRender = () => {
     renderGameRoom();
@@ -162,7 +177,7 @@ function renderGameRoom() {
         }
     }
     if (game.status === 'overtime') {
-        statusText = "Time expired! Turns start now!";
+        statusText = "Time expired! Last turns!";
     }
     if (game.status === 'paused') statusText = "Game Paused - Opponent Disconnected";
     if (game.status === 'finished' || game.status === 'game-over') {
