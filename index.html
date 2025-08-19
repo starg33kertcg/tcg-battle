@@ -367,24 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
 let PUSHER_APP_KEY = null;
 let PUSHER_CLUSTER = null;
 
-// --- PUSHER LOGIC ---
-const initPusher = (key, cluster) => { // Now accepts key and cluster as arguments
-    if (!key || !cluster) {
-        console.error("Pusher key or cluster is missing. Real-time features will not work.");
-        return;
-    }
-    appState.pusher = new Pusher(key, { // Use the arguments here
-        cluster: cluster,
-        authEndpoint: '/.netlify/functions/pusher-auth',
-        auth: {
-            params: {
-                playerName: appState.playerName,
-                isHost: appState.isHost
-            }
-        }
-    });
-};
-
     // --- DOM ELEMENTS ---
     const views = {
         home: document.getElementById('home-view'),
