@@ -363,13 +363,27 @@ document.addEventListener('DOMContentLoaded', () => {
         },
     };
 
-    // --- PUSHER CONFIGURATION ---
-    const PUSHER_APP_KEY = '8206e71c1218d7e2a91d'; // IMPORTANT: Best to use Netlify Environment Variables
-    const PUSHER_CLUSTER = 'us2';
+// --- PUSHER CONFIGURATION ---
+let PUSHER_APP_KEY = null;
+let PUSHER_CLUSTER = null;
 
-    if (PUSHER_APP_KEY === 'YOUR_PUSHER_APP_KEY' || PUSHER_CLUSTER === 'YOUR_PUSHER_CLUSTER') {
-        console.warn("Pusher key not set. Real-time features will not work.");
+// --- PUSHER LOGIC ---
+const initPusher = (key, cluster) => { // Now accepts key and cluster as arguments
+    if (!key || !cluster) {
+        console.error("Pusher key or cluster is missing. Real-time features will not work.");
+        return;
     }
+    appState.pusher = new Pusher(key, { // Use the arguments here
+        cluster: cluster,
+        authEndpoint: '/.netlify/functions/pusher-auth',
+        auth: {
+            params: {
+                playerName: appState.playerName,
+                isHost: appState.isHost
+            }
+        }
+    });
+};
 
     // --- DOM ELEMENTS ---
     const views = {
@@ -1520,45 +1534,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- INITIALIZATION ---
-    const init = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const presenterCode = urlParams.get('presenter');
-        const roomToJoin = urlParams.get('join');
-        const savedSession = sessionStorage.getItem('tcgBattleSession');
+// --- INITIALIZATION ---
+const init = async () => { // Make the function async
+    try {
+        // Fetch the config from our new serverless function
+        const response = await fetch('/.netlify/functions/pusher-config');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const config = await response.json();
+        
+        // Assign the fetched keys to our variables
+        PUSHER_APP_KEY = config.key;
+        PUSHER_CLUSTER = config.cluster;
 
-        if (presenterCode) {
-            appState.isHost = false;
-            appState.myId = `presenter_${Date.now()}`;
-            initPusher();
-            subscribeToChannel(presenterCode);
-            showView('presenter');
-        } else if (savedSession) {
-            const sessionData = JSON.parse(savedSession);
-            appState.roomCode = sessionData.roomCode;
-            appState.isHost = sessionData.isHost;
-            appState.playerName = sessionData.playerName;
-            
-            if (sessionData.isHost) {
-                const savedGameState = localStorage.getItem(`tcgBattleState-${appState.roomCode}`);
-                if (savedGameState) {
-                    appState.game = JSON.parse(savedGameState);
-                }
+    } catch (error) {
+        console.error("Could not fetch Pusher config:", error);
+        alert("Error: Could not connect to the real-time server. Please try refreshing the page.");
+        return; // Stop initialization if config fails
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const presenterCode = urlParams.get('presenter');
+    const roomToJoin = urlParams.get('join');
+    const savedSession = sessionStorage.getItem('tcgBattleSession');
+
+    if (presenterCode) {
+        appState.isHost = false;
+        appState.myId = `presenter_${Date.now()}`;
+        initPusher(PUSHER_APP_KEY, PUSHER_CLUSTER); // Pass the keys
+        subscribeToChannel(presenterCode);
+        showView('presenter');
+    } else if (savedSession) {
+        const sessionData = JSON.parse(savedSession);
+        appState.roomCode = sessionData.roomCode;
+        appState.isHost = sessionData.isHost;
+        appState.playerName = sessionData.playerName;
+        
+        if (sessionData.isHost) {
+            const savedGameState = localStorage.getItem(`tcgBattleState-${appState.roomCode}`);
+            if (savedGameState) {
+                appState.game = JSON.parse(savedGameState);
             }
-            
-            initPusher();
-            subscribeToChannel(appState.roomCode);
-            showView(sessionData.view);
-            fullRender();
-
-        } else if (roomToJoin) {
-            document.getElementById('room-code-input').value = roomToJoin;
-            showModal('joinSessionModal');
-            showView('home');
-        } else {
-            showView('home');
         }
-    };
+        
+        initPusher(PUSHER_APP_KEY, PUSHER_CLUSTER); // Pass the keys
+        subscribeToChannel(appState.roomCode);
+        showView(sessionData.view);
+        fullRender();
+
+    } else if (roomToJoin) {
+        document.getElementById('room-code-input').value = roomToJoin;
+        showModal('joinSessionModal');
+        showView('home');
+    } else {
+        showView('home');
+    }
+};
 
     init();
 });
