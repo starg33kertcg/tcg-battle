@@ -1,7 +1,7 @@
 // /js/main.js
 
-import { appState, restartRound, startGameWithFirstPlayer, handleTie, handleIssueWin, handleScoop } from './gameState.js';
-import { showView, showModal, hideModal, fullRender, renderChooseFirstPlayerModal, renderIssueWinModal } from './ui.js';
+import { appState, restartRound, startGameWithFirstPlayer, handleTie, handleScoop, handleIssueWin } from './gameState.js';
+import { showView, showModal, hideModal, fullRender, renderChooseFirstPlayerModal, renderIssueWinModal, setupGameSettings } from './ui.js';
 import { initializePusher, subscribeToChannel, broadcastGameState, startTimer } from './pusherClient.js';
 
 // --- INITIALIZATION ---
@@ -57,12 +57,14 @@ async function init() {
 // --- EVENT HANDLERS ---
 function addEventListeners() {
     document.getElementById('create-session-btn').addEventListener('click', () => showView('tcgSelection'));
+    
     document.getElementById('join-session-btn').addEventListener('click', () => {
         document.getElementById('join-player-name').value = appState.playerName;
         showModal('joinSessionModal');
     });
-    document.getElementById('back-to-home-from-tcg').addEventListener('click', () => showView('home'));
 
+    document.getElementById('back-to-home-from-tcg').addEventListener('click', () => showView('home'));
+    
     document.getElementById('select-pokemon').addEventListener('click', () => setupGameSettings('pokemon'));
     document.getElementById('select-lorcana').addEventListener('click', () => setupGameSettings('lorcana'));
 
@@ -183,7 +185,7 @@ function addEventListeners() {
             window.open(presenterUrl, '_blank');
         }
     
-        hideModal('game-menu-dropdown');
+        document.getElementById('game-menu-dropdown').classList.add('hidden');
     });
 
     document.getElementById('game-menu-btn').addEventListener('click', () => {
@@ -208,7 +210,7 @@ function addEventListeners() {
             if (winnerId === 'tie') {
                 handleTie();
             } else {
-                handleGameWin(winnerId);
+                handleIssueWin(winnerId);
             }
             broadcastGameState();
             fullRender();
