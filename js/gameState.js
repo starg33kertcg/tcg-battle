@@ -78,6 +78,15 @@ export function handleScoop(loserId) {
 }
 
 /**
+ * Handles the host manually issuing a win to a player. This is a wrapper for handleGameWin.
+ * @param {string} winnerId - The ID of the player to award the win to.
+ */
+export function handleIssueWin(winnerId) {
+    if (!appState.isHost) return;
+    handleGameWin(winnerId);
+}
+
+/**
  * Handles the host declaring a tie game.
  */
 export function handleTie() {
