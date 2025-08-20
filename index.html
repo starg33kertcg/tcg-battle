@@ -106,27 +106,59 @@
         }
         
         /* MTG D20 Styles */
-        .d20-container {
+        .d20-life-container {
             position: relative;
             width: 150px;
             height: 150px;
             margin: 0 auto;
         }
-        .d20-svg {
+        .d20-life-bg {
             width: 100%;
             height: 100%;
         }
-        .d20-text {
+        .d20-life-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             font-family: 'Bangers', cursive;
             font-size: 56px;
-            fill: #e5e7eb;
-            text-anchor: middle;
-            dominant-baseline: central;
-            paint-order: stroke;
-            stroke: #1f2937;
-            stroke-width: 4px;
-            stroke-linecap: butt;
-            stroke-linejoin: miter;
+            color: #1f2937;
+            text-shadow: 1px 1px 2px #f9fafb, -1px -1px 2px #f9fafb;
+        }
+
+        /* Pokemon Tile Style */
+        .pokeball-tile {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #ef4444 0%, #ef4444 50%, #f9fafb 50%, #f9fafb 100%);
+            border: 4px solid #1f2937;
+            margin: 0 auto 8px auto;
+            transition: all 0.3s ease;
+        }
+        .pokeball-tile::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 6px;
+            width: 100%;
+            background: #1f2937;
+        }
+        .pokeball-tile::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #f9fafb;
+            border: 5px solid #1f2937;
         }
     </style>
 </head>
@@ -151,7 +183,7 @@
             <h2 class="text-4xl font-bold mb-8">Choose Your TCG</h2>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
                 <div id="select-pokemon" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-yellow-400 hover:bg-gray-600 transition-colors">
-                    <img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/025.png" alt="Pokémon" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=Pokemon';">
+                    <div class="pokeball-tile"></div>
                     <h3 class="font-bold text-lg">Pokémon</h3>
                 </div>
                 <div id="select-lorcana" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-purple-400 hover:bg-gray-600 transition-colors">
@@ -159,8 +191,8 @@
                     <h3 class="font-bold text-lg">Lorcana</h3>
                 </div>
                 <div id="select-mtg" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-red-500 hover:bg-gray-600 transition-colors">
-                    <img src="https://placehold.co/96x96/78716C/FFFFFF?text=MTG" alt="Magic: The Gathering" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=MTG';">
-                    <h3 class="font-bold text-lg">Magic: The Gathering</h3>
+                    <img src="https://tcgbattle.netlify.app/images/d20_white.png" alt="Magic: The Gathering" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=MTG';">
+                    <h3 class="font-bold text-lg">MTG</h3>
                 </div>
                 <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
                     <h3 class="font-bold text-lg text-gray-400">Yu-Gi-Oh!</h3>
@@ -475,7 +507,6 @@ let PUSHER_CLUSTER = null;
     const trainerSilhouetteSVG = `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
     const avatarColors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#8b5cf6', '#ec4899', '#f97316'];
     const loreIconSVG = `<svg class="w-20 h-20 text-gray-200 lore-icon-glow" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.0001 2.40039L18.4001 12.0004L12.0001 21.6004L5.6001 12.0004L12.0001 2.40039ZM12.0001 7.68039L9.1201 12.0004L12.0001 16.3204L14.8801 12.0004L12.0001 7.68039Z"/></svg>`;
-    const d20SVG = `<svg class="d20-svg" viewBox="0 0 100 100"><polygon points="50,5 95,25 95,75 50,95 5,75 5,25" style="fill:#4b5563;stroke:#1f2937;stroke-width:2"/><text x="50" y="52" class="d20-text">20</text></svg>`;
 
     // --- UTILITY FUNCTIONS ---
     const generateRoomCode = () => Math.floor(10000 + Math.random() * 90000).toString();
@@ -685,8 +716,9 @@ let PUSHER_CLUSTER = null;
         const lifeTracker = document.getElementById('life-tracker');
         lifeTracker.innerHTML = `
             <button id="life-up-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-up fa-3x"></i></button>
-            <div class="d20-container my-2">
-                ${d20SVG.replace('>20<', `>${me.life}<`)}
+            <div class="d20-life-container my-2">
+                <img src="https://tcgbattle.netlify.app/images/d20.png" alt="D20 Life Counter" class="d20-life-bg">
+                <span class="d20-life-text">${me.life}</span>
             </div>
             <button id="life-down-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-down fa-3x"></i></button>
         `;
@@ -1724,6 +1756,7 @@ let PUSHER_CLUSTER = null;
         }
 
         if (lifeChanged) {
+            if (newLife < 0) newLife = 0; // Prevent life from going below 0
             myPlayer.life = newLife;
             if (appState.isHost) {
                 if(newLife <= 0) {
