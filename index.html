@@ -969,7 +969,6 @@ let PUSHER_CLUSTER = null;
             return; // No winner to show
         }
         
-        // FIX: Capture the host status at the time the modal is shown.
         const wasHostWhenModalOpened = appState.isHost;
 
         if (wasHostWhenModalOpened) {
@@ -1719,7 +1718,7 @@ let PUSHER_CLUSTER = null;
             restartRound();
         } else if (e.target.id === 'next-game-btn' && appState.isHost) {
             startNextGame();
-        } else if (e.target.id === 'close-winner-btn' && !appState.isHost) {
+        } else if (e.target.id === 'close-winner-btn') {
             hideModal('winnerModal');
         }
     });
