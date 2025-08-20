@@ -160,6 +160,25 @@
             background: #f9fafb;
             border: 5px solid #1f2937;
         }
+
+        /* Calculator Styles */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+        .calculator-btn {
+            background-color: #4b5563;
+            border: 1px solid #6b7280;
+        }
+        .calculator-btn:hover {
+            background-color: #6b7280;
+        }
+        .calculator-display {
+            background-color: #1f2937;
+            border: 1px solid #4b5563;
+            min-height: 60px;
+        }
     </style>
 </head>
 <body class="text-gray-100" style="background-color: #1a1a2e;">
@@ -194,9 +213,9 @@
                     <img src="https://tcgbattle.netlify.app/images/d20_white.png" alt="Magic: The Gathering" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=MTG';">
                     <h3 class="font-bold text-lg">MTG</h3>
                 </div>
-                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
-                    <h3 class="font-bold text-lg text-gray-400">Yu-Gi-Oh!</h3>
-                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                <div id="select-yugioh" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-yellow-300 hover:bg-gray-600 transition-colors">
+                    <img src="https://tcgbattle.netlify.app/images/yugioh.png" alt="Yu-Gi-Oh!" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=YGO';">
+                    <h3 class="font-bold text-lg">Yu-Gi-Oh!</h3>
                 </div>
                 <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
                     <h3 class="font-bold text-lg text-gray-400">One Piece</h3>
@@ -242,6 +261,10 @@
                     <div id="mtg-life-settings" class="hidden">
                         <label class="font-bold">Starting Life</label>
                         <input type="number" id="starting-life-input" value="20" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
+                    </div>
+                    <div id="yugioh-lp-settings" class="hidden">
+                        <label class="font-bold">Starting Life Points</label>
+                        <input type="number" id="starting-lp-input" value="8000" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
                     </div>
                     <div>
                         <label class="font-bold">Timer Type</label>
@@ -332,6 +355,16 @@
             </div>
         </div>
 
+        <div id="calculator-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-800 rounded-lg p-4 w-full max-w-xs shadow-xl">
+                <div id="calculator-display" class="calculator-display rounded p-2 mb-4 text-right text-3xl font-mono text-white break-words">0</div>
+                <div id="calculator-buttons" class="calculator-grid">
+                    <!-- Buttons will be injected here -->
+                </div>
+                <button id="close-calculator-btn" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Close</button>
+            </div>
+        </div>
+
         <section id="game-room-view" class="hidden min-h-screen flex flex-col p-2 sm:p-4">
             <header class="flex justify-between items-center mb-4">
                 <div class="text-sm">
@@ -392,6 +425,12 @@
                         <div id="life-tracker" class="flex flex-col items-center">
                         </div>
                     </div>
+
+                    <div id="yugioh-controls" class="hidden">
+                        <h3 class="font-bold text-xl mb-2">Your Life Points</h3>
+                        <div id="lp-tracker" class="flex flex-col items-center">
+                        </div>
+                    </div>
                     
                     <div id="turn-controls" class="mt-4">
                     </div>
@@ -409,6 +448,7 @@
                         <p id="presenter-p1-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                         <div id="presenter-p1-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
                         <div id="presenter-p1-life" class="text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p1-lp" class="text-3xl font-bold mt-2 hidden"></div>
                     </div>
                     
                     <div class="flex-shrink-0 mx-8">
@@ -423,6 +463,7 @@
                         <p id="presenter-p2-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                         <div id="presenter-p2-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
                         <div id="presenter-p2-life" class="text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p2-lp" class="text-3xl font-bold mt-2 hidden"></div>
                     </div>
                 </div>
 
@@ -464,6 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
             prizeCount: 6,
             loreToWin: 20,
             startingLife: 20,
+            startingLP: 8000,
             timerType: 'countdown', // countdown, chess
             countdownMinutes: 30,
             chessMinutes: 20,
@@ -474,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
             roundWinnerId: null,
             isTie: false,
             winnerId: null,
-            players: {}, // { [id]: { name, prizesTaken, loreCount, life, isHost, color, connected, actionsUsed } }
+            players: {}, // { [id]: { name, prizesTaken, loreCount, life, lp, isHost, color, connected, actionsUsed } }
             turn: null, // player id
             timerState: {
                 running: false,
@@ -501,6 +543,7 @@ let PUSHER_CLUSTER = null;
         winnerModal: document.getElementById('winner-modal'),
         issueWinModal: document.getElementById('issue-win-modal'),
         zeroLifeModal: document.getElementById('zero-life-modal'),
+        calculatorModal: document.getElementById('calculator-modal'),
     };
     
     // --- ASSETS ---
@@ -524,6 +567,7 @@ let PUSHER_CLUSTER = null;
         prizesTaken: [],
         loreCount: 0,
         life: appState.game.startingLife,
+        lp: appState.game.startingLP,
         connected: true,
         actionsUsed: { supporter: false, energy: false, retreat: false, stadium: false }
     });
@@ -599,6 +643,7 @@ let PUSHER_CLUSTER = null;
         document.getElementById('pokemon-controls').classList.add('hidden');
         document.getElementById('lorcana-controls').classList.add('hidden');
         document.getElementById('mtg-controls').classList.add('hidden');
+        document.getElementById('yugioh-controls').classList.add('hidden');
 
         if (game.tcg === 'pokemon') {
             document.getElementById('pokemon-controls').classList.remove('hidden');
@@ -631,6 +676,15 @@ let PUSHER_CLUSTER = null;
             }
             if (p2Id && game.players[p2Id]) {
                 document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].life} Life)`;
+            }
+        } else if (game.tcg === 'yugioh') {
+            document.getElementById('yugioh-controls').classList.remove('hidden');
+            renderYugiohControls(me);
+            if (p1Id && game.players[p1Id]) {
+                document.getElementById('player1-name-turn').textContent = `${game.players[p1Id].name} (${game.players[p1Id].lp})`;
+            }
+            if (p2Id && game.players[p2Id]) {
+                document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].lp})`;
             }
         }
 
@@ -724,6 +778,24 @@ let PUSHER_CLUSTER = null;
         `;
     };
 
+    const renderYugiohControls = (me) => {
+        const lpTracker = document.getElementById('lp-tracker');
+        lpTracker.innerHTML = `
+            <div class="text-6xl font-bold mb-4">${me.lp}</div>
+            <div class="grid grid-cols-4 gap-2 w-full max-w-sm">
+                <button data-lp="-1000" class="lp-btn bg-red-600 hover:bg-red-700 p-2 rounded">-1000</button>
+                <button data-lp="-100" class="lp-btn bg-red-600 hover:bg-red-700 p-2 rounded">-100</button>
+                <button data-lp="-10" class="lp-btn bg-red-600 hover:bg-red-700 p-2 rounded">-10</button>
+                <button data-lp="-1" class="lp-btn bg-red-600 hover:bg-red-700 p-2 rounded">-1</button>
+                <button data-lp="1000" class="lp-btn bg-green-600 hover:bg-green-700 p-2 rounded">+1000</button>
+                <button data-lp="100" class="lp-btn bg-green-600 hover:bg-green-700 p-2 rounded">+100</button>
+                <button data-lp="10" class="lp-btn bg-green-600 hover:bg-green-700 p-2 rounded">+10</button>
+                <button data-lp="1" class="lp-btn bg-green-600 hover:bg-green-700 p-2 rounded">+1</button>
+            </div>
+            <button id="calculator-open-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg"><i class="fas fa-calculator mr-2"></i>Calculator</button>
+        `;
+    };
+
     const renderTimerDisplay = () => {
         const timerDisplay = document.getElementById('timer-display-controls');
         if (!timerDisplay) return;
@@ -788,8 +860,8 @@ let PUSHER_CLUSTER = null;
         const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
         const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
         
-        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, life: 20, color: '#cccccc', actionsUsed: {} };
-        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, life: 20, color: '#cccccc', actionsUsed: {} };
+        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, life: 20, lp: 8000, color: '#cccccc', actionsUsed: {} };
+        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, life: 20, lp: 8000, color: '#cccccc', actionsUsed: {} };
 
         document.getElementById('presenter-p1-name').textContent = p1.name;
         document.getElementById('presenter-p2-name').textContent = p2.name;
@@ -819,6 +891,8 @@ let PUSHER_CLUSTER = null;
         const p2Lore = document.getElementById('presenter-p2-lore');
         const p1Life = document.getElementById('presenter-p1-life');
         const p2Life = document.getElementById('presenter-p2-life');
+        const p1Lp = document.getElementById('presenter-p1-lp');
+        const p2Lp = document.getElementById('presenter-p2-lp');
         
         // Hide all game-specific displays initially
         document.getElementById('presenter-p1-prizes').classList.add('hidden');
@@ -829,7 +903,8 @@ let PUSHER_CLUSTER = null;
         p2Lore.classList.add('hidden');
         p1Life.classList.add('hidden');
         p2Life.classList.add('hidden');
-
+        p1Lp.classList.add('hidden');
+        p2Lp.classList.add('hidden');
 
         if (game.tcg === 'pokemon') {
             document.getElementById('presenter-p1-prizes').classList.remove('hidden');
@@ -848,6 +923,11 @@ let PUSHER_CLUSTER = null;
             p2Life.classList.remove('hidden');
             p1Life.textContent = `${p1.life} Life Remaining`;
             p2Life.textContent = `${p2.life} Life Remaining`;
+        } else if (game.tcg === 'yugioh') {
+            p1Lp.classList.remove('hidden');
+            p2Lp.classList.remove('hidden');
+            p1Lp.textContent = `${p1.lp} Life Points`;
+            p2Lp.textContent = `${p2.lp} Life Points`;
         }
 
         const countdownTimerEl = document.getElementById('presenter-timer');
@@ -1300,6 +1380,7 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-update-lore');
         appState.channel.unbind('client-update-action');
         appState.channel.unbind('client-update-life');
+        appState.channel.unbind('client-update-lp');
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
             const playerId = metadata.user_id;
@@ -1339,6 +1420,20 @@ let PUSHER_CLUSTER = null;
                 }
                 broadcastGameState();
                 fullRender();
+            }
+        });
+
+        appState.channel.bind('client-update-lp', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].lp = data.lp;
+                if (data.lp <= 0) {
+                    const opponentId = Object.keys(appState.game.players).find(id => id !== playerId);
+                    handleGameWin(opponentId);
+                } else {
+                    broadcastGameState();
+                    fullRender();
+                }
             }
         });
 
@@ -1441,6 +1536,7 @@ let PUSHER_CLUSTER = null;
             p.prizesTaken = [];
             p.loreCount = 0;
             p.life = appState.game.startingLife;
+            p.lp = appState.game.startingLP;
             p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
         });
 
@@ -1504,6 +1600,7 @@ let PUSHER_CLUSTER = null;
         document.getElementById('additional-tracking-settings').style.display = tcg === 'pokemon' ? 'block' : 'none';
         document.getElementById('lorcana-lore-settings').style.display = tcg === 'lorcana' ? 'block' : 'none';
         document.getElementById('mtg-life-settings').style.display = tcg === 'mtg' ? 'block' : 'none';
+        document.getElementById('yugioh-lp-settings').style.display = tcg === 'yugioh' ? 'block' : 'none';
 
         const isCountdown = appState.game.timerType === 'countdown';
         document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
@@ -1515,6 +1612,7 @@ let PUSHER_CLUSTER = null;
     document.getElementById('select-pokemon').addEventListener('click', () => setupGameSettings('pokemon'));
     document.getElementById('select-lorcana').addEventListener('click', () => setupGameSettings('lorcana'));
     document.getElementById('select-mtg').addEventListener('click', () => setupGameSettings('mtg'));
+    document.getElementById('select-yugioh').addEventListener('click', () => setupGameSettings('yugioh'));
 
     document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
@@ -1552,6 +1650,7 @@ let PUSHER_CLUSTER = null;
         appState.game.chessMinutes = parseInt(document.getElementById('chess-minutes').value) || 20;
         appState.game.loreToWin = parseInt(document.getElementById('lore-to-win-input').value) || 20;
         appState.game.startingLife = parseInt(document.getElementById('starting-life-input').value) || 20;
+        appState.game.startingLP = parseInt(document.getElementById('starting-lp-input').value) || 8000;
 
         const sessionData = {
             roomCode: generateRoomCode(),
@@ -1694,6 +1793,7 @@ let PUSHER_CLUSTER = null;
             p.prizesTaken = [];
             p.loreCount = 0;
             p.life = appState.game.startingLife;
+            p.lp = appState.game.startingLP;
             p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
         });
         appState.game.status = 'waiting';
