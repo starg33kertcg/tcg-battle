@@ -82,7 +82,7 @@
             filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
         }
 
-        /* New Feature: Additional Tracking Styles */
+        /* Additional Tracking Styles */
         .action-btn.used {
             opacity: 0.4;
             transform: scale(0.95);
@@ -103,6 +103,30 @@
         .presenter-action-emblem.used {
             opacity: 0.3;
             filter: grayscale(80%);
+        }
+        
+        /* MTG D20 Styles */
+        .d20-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+        }
+        .d20-svg {
+            width: 100%;
+            height: 100%;
+        }
+        .d20-text {
+            font-family: 'Bangers', cursive;
+            font-size: 56px;
+            fill: #e5e7eb;
+            text-anchor: middle;
+            dominant-baseline: central;
+            paint-order: stroke;
+            stroke: #1f2937;
+            stroke-width: 4px;
+            stroke-linecap: butt;
+            stroke-linejoin: miter;
         }
     </style>
 </head>
@@ -134,9 +158,9 @@
                     <img src="https://tcgbattle.netlify.app/images/lore.png" alt="Lorcana" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=Lorcana';">
                     <h3 class="font-bold text-lg">Lorcana</h3>
                 </div>
-                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
-                    <h3 class="font-bold text-lg text-gray-400">Magic: The Gathering</h3>
-                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                <div id="select-mtg" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-red-500 hover:bg-gray-600 transition-colors">
+                    <img src="https://placehold.co/96x96/78716C/FFFFFF?text=MTG" alt="Magic: The Gathering" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=MTG';">
+                    <h3 class="font-bold text-lg">Magic: The Gathering</h3>
                 </div>
                 <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
                     <h3 class="font-bold text-lg text-gray-400">Yu-Gi-Oh!</h3>
@@ -162,14 +186,13 @@
                         <label class="font-bold">Player Name</label>
                         <input type="text" id="player-name-input" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1" placeholder="Enter your name">
                     </div>
-                    <div id="prize-card-settings">
+                    <div id="prize-card-settings" class="hidden">
                         <label class="font-bold">Prize Cards</label>
                         <div class="flex space-x-2 mt-1">
                             <button data-prizes="6" class="prize-option-btn flex-1 bg-blue-600 text-white rounded p-2">6 (Standard)</button>
                             <button data-prizes="4" class="prize-option-btn flex-1 bg-gray-600 text-white rounded p-2">4 (Pre-Release)</button>
                         </div>
                     </div>
-                    <!-- New Feature: Additional Tracking Toggle -->
                     <div id="additional-tracking-settings" class="hidden">
                         <label class="font-bold flex items-center">
                             Additional Tracking
@@ -183,6 +206,10 @@
                     <div id="lorcana-lore-settings" class="hidden">
                         <label class="font-bold">Lore to Win</label>
                         <input type="number" id="lore-to-win-input" value="20" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
+                    </div>
+                    <div id="mtg-life-settings" class="hidden">
+                        <label class="font-bold">Starting Life</label>
+                        <input type="number" id="starting-life-input" value="20" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
                     </div>
                     <div>
                         <label class="font-bold">Timer Type</label>
@@ -262,6 +289,17 @@
             </div>
         </div>
 
+        <div id="zero-life-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
+                <h2 class="text-2xl font-bold mb-4">Player at 0 Life</h2>
+                <p id="zero-life-prompt" class="mb-6"></p>
+                <div class="flex justify-center space-x-4">
+                    <button id="zero-life-no-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg">No</button>
+                    <button id="zero-life-yes-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Yes</button>
+                </div>
+            </div>
+        </div>
+
         <section id="game-room-view" class="hidden min-h-screen flex flex-col p-2 sm:p-4">
             <header class="flex justify-between items-center mb-4">
                 <div class="text-sm">
@@ -299,8 +337,7 @@
                     
                     <div id="timer-display-controls" class="mb-4 text-center"></div>
                     
-                    <div id="pokemon-controls">
-                        <!-- New Feature: Additional Tracking Buttons -->
+                    <div id="pokemon-controls" class="hidden">
                         <div id="additional-tracking-buttons" class="hidden grid grid-cols-4 gap-2 mb-4">
                             <button data-action="supporter" class="action-btn bg-blue-500 hover:bg-blue-600 rounded p-2 font-bold transition-all">Supporter</button>
                             <button data-action="energy" class="action-btn bg-yellow-500 hover:bg-yellow-600 rounded p-2 font-bold transition-all">Energy</button>
@@ -318,6 +355,12 @@
                         </div>
                     </div>
                     
+                    <div id="mtg-controls" class="hidden">
+                        <h3 class="font-bold text-xl mb-2">Your Life</h3>
+                        <div id="life-tracker" class="flex flex-col items-center">
+                        </div>
+                    </div>
+                    
                     <div id="turn-controls" class="mt-4">
                     </div>
                 </div>
@@ -330,10 +373,10 @@
                     <div id="presenter-p1-side" class="flex-1 flex flex-col items-center">
                         <div id="presenter-p1-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p1-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 1</h2>
-                        <!-- New Feature: Presenter Emblems -->
                         <div id="presenter-p1-actions" class="hidden mt-2 space-x-2"></div>
                         <p id="presenter-p1-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                         <div id="presenter-p1-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p1-life" class="text-3xl font-bold mt-2 hidden"></div>
                     </div>
                     
                     <div class="flex-shrink-0 mx-8">
@@ -344,10 +387,10 @@
                     <div id="presenter-p2-side" class="flex-1 flex flex-col items-center">
                         <div id="presenter-p2-avatar" class="w-32 h-32 md:w-48 md:h-48 p-2 rounded-lg bg-black bg-opacity-20 border-2 border-gray-500"></div>
                         <h2 id="presenter-p2-name" class="mt-2 text-2xl md:text-4xl font-bold text-white bg-black bg-opacity-20 px-4 py-1 rounded-md">Player 2</h2>
-                        <!-- New Feature: Presenter Emblems -->
                         <div id="presenter-p2-actions" class="hidden mt-2 space-x-2"></div>
                         <p id="presenter-p2-wins" class="text-xl font-bold text-yellow-400 mt-2"></p>
                         <div id="presenter-p2-lore" class="flex items-center text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p2-life" class="text-3xl font-bold mt-2 hidden"></div>
                     </div>
                 </div>
 
@@ -388,17 +431,18 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'waiting', // waiting, active, paused, finished, overtime, game-over
             prizeCount: 6,
             loreToWin: 20,
+            startingLife: 20,
             timerType: 'countdown', // countdown, chess
             countdownMinutes: 30,
             chessMinutes: 20,
             gameMode: 'basic', // basic, bestOfThree
-            additionalTrackingEnabled: false, // New Feature
+            additionalTrackingEnabled: false,
             currentGame: 1,
             wins: {}, // { [playerId]: winCount }
             roundWinnerId: null,
             isTie: false,
             winnerId: null,
-            players: {}, // { [id]: { name, prizesTaken: [], loreCount: 0, isHost, color, connected: true, actionsUsed: { supporter, energy, retreat, stadium } } }
+            players: {}, // { [id]: { name, prizesTaken, loreCount, life, isHost, color, connected, actionsUsed } }
             turn: null, // player id
             timerState: {
                 running: false,
@@ -424,12 +468,14 @@ let PUSHER_CLUSTER = null;
         chooseFirstPlayerModal: document.getElementById('choose-first-player-modal'),
         winnerModal: document.getElementById('winner-modal'),
         issueWinModal: document.getElementById('issue-win-modal'),
+        zeroLifeModal: document.getElementById('zero-life-modal'),
     };
     
     // --- ASSETS ---
     const trainerSilhouetteSVG = `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
     const avatarColors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#8b5cf6', '#ec4899', '#f97316'];
     const loreIconSVG = `<svg class="w-20 h-20 text-gray-200 lore-icon-glow" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.0001 2.40039L18.4001 12.0004L12.0001 21.6004L5.6001 12.0004L12.0001 2.40039ZM12.0001 7.68039L9.1201 12.0004L12.0001 16.3204L14.8801 12.0004L12.0001 7.68039Z"/></svg>`;
+    const d20SVG = `<svg class="d20-svg" viewBox="0 0 100 100"><polygon points="50,5 95,25 95,75 50,95 5,75 5,25" style="fill:#4b5563;stroke:#1f2937;stroke-width:2"/><text x="50" y="52" class="d20-text">20</text></svg>`;
 
     // --- UTILITY FUNCTIONS ---
     const generateRoomCode = () => Math.floor(10000 + Math.random() * 90000).toString();
@@ -446,6 +492,7 @@ let PUSHER_CLUSTER = null;
         color,
         prizesTaken: [],
         loreCount: 0,
+        life: appState.game.startingLife,
         connected: true,
         actionsUsed: { supporter: false, energy: false, retreat: false, stadium: false }
     });
@@ -518,11 +565,14 @@ let PUSHER_CLUSTER = null;
         const p1Indicator = document.getElementById('player1-turn-indicator');
         const p2Indicator = document.getElementById('player2-turn-indicator');
         
+        document.getElementById('pokemon-controls').classList.add('hidden');
+        document.getElementById('lorcana-controls').classList.add('hidden');
+        document.getElementById('mtg-controls').classList.add('hidden');
+
         if (game.tcg === 'pokemon') {
             document.getElementById('pokemon-controls').classList.remove('hidden');
-            document.getElementById('lorcana-controls').classList.add('hidden');
             renderPrizeCards(me);
-            renderAdditionalTracking(me); // New Feature
+            renderAdditionalTracking(me);
             if (p1Id && game.players[p1Id]) {
                 const p1 = game.players[p1Id];
                 const p1PrizesLeft = game.prizeCount - p1.prizesTaken.length;
@@ -534,16 +584,22 @@ let PUSHER_CLUSTER = null;
                 document.getElementById('player2-name-turn').textContent = `${p2.name} (${p2PrizesLeft} Prizes)`;
             }
         } else if (game.tcg === 'lorcana') {
-            document.getElementById('pokemon-controls').classList.add('hidden');
             document.getElementById('lorcana-controls').classList.remove('hidden');
             renderLorcanaControls(me);
             if (p1Id && game.players[p1Id]) {
-                const p1 = game.players[p1Id];
-                document.getElementById('player1-name-turn').textContent = `${p1.name} (${p1.loreCount} Lore)`;
+                document.getElementById('player1-name-turn').textContent = `${game.players[p1Id].name} (${game.players[p1Id].loreCount} Lore)`;
             }
             if (p2Id && game.players[p2Id]) {
-                const p2 = game.players[p2Id];
-                document.getElementById('player2-name-turn').textContent = `${p2.name} (${p2.loreCount} Lore)`;
+                document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].loreCount} Lore)`;
+            }
+        } else if (game.tcg === 'mtg') {
+            document.getElementById('mtg-controls').classList.remove('hidden');
+            renderMtgControls(me);
+            if (p1Id && game.players[p1Id]) {
+                document.getElementById('player1-name-turn').textContent = `${game.players[p1Id].name} (${game.players[p1Id].life} Life)`;
+            }
+            if (p2Id && game.players[p2Id]) {
+                document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].life} Life)`;
             }
         }
 
@@ -564,14 +620,17 @@ let PUSHER_CLUSTER = null;
         }
         if (game.status === 'paused') statusText = "Game Paused - Opponent Disconnected";
         if (game.status === 'finished') {
-            const winner = game.players[game.roundWinnerId];
+            const winner = game.players[game.winnerId];
             if (game.isTie) {
-                statusText = "Round Tied!";
+                statusText = "Match Tied!";
             } else if (winner) {
-                statusText = `Game Over! ${winner.name} wins the round!`;
+                statusText = `Match Over! ${winner.name} is the winner!`;
             } else {
-                statusText = "Game Over!";
+                statusText = "Match Over!";
             }
+        } else if (game.status === 'game-over') {
+            const roundWinner = game.players[game.roundWinnerId];
+            if(roundWinner) statusText = `${roundWinner.name} wins Game ${game.currentGame}!`;
         }
         document.getElementById('game-status-text').textContent = statusText;
 
@@ -593,7 +652,6 @@ let PUSHER_CLUSTER = null;
         }
     };
 
-    // New Feature: Render Additional Tracking Buttons
     const renderAdditionalTracking = (me) => {
         const container = document.getElementById('additional-tracking-buttons');
         if (!appState.game.additionalTrackingEnabled) {
@@ -620,6 +678,17 @@ let PUSHER_CLUSTER = null;
                 <span id="lore-count" class="text-6xl font-bold ml-4">${me.loreCount}</span>
             </div>
             <button id="lore-down-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-down fa-3x"></i></button>
+        `;
+    };
+
+    const renderMtgControls = (me) => {
+        const lifeTracker = document.getElementById('life-tracker');
+        lifeTracker.innerHTML = `
+            <button id="life-up-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-up fa-3x"></i></button>
+            <div class="d20-container my-2">
+                ${d20SVG.replace('>20<', `>${me.life}<`)}
+            </div>
+            <button id="life-down-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-down fa-3x"></i></button>
         `;
     };
 
@@ -687,8 +756,8 @@ let PUSHER_CLUSTER = null;
         const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
         const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
         
-        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, color: '#cccccc', actionsUsed: {} };
-        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, color: '#cccccc', actionsUsed: {} };
+        const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, life: 20, color: '#cccccc', actionsUsed: {} };
+        const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, life: 20, color: '#cccccc', actionsUsed: {} };
 
         document.getElementById('presenter-p1-name').textContent = p1.name;
         document.getElementById('presenter-p2-name').textContent = p2.name;
@@ -714,27 +783,39 @@ let PUSHER_CLUSTER = null;
             document.getElementById('presenter-p2-wins').textContent = '';
         }
 
-        if (game.tcg === 'lorcana') {
-            document.getElementById('presenter-p1-prizes').classList.add('hidden');
-            document.getElementById('presenter-p2-prizes').classList.add('hidden');
-            document.getElementById('presenter-p1-actions').classList.add('hidden'); // New
-            document.getElementById('presenter-p2-actions').classList.add('hidden'); // New
-            const p1Lore = document.getElementById('presenter-p1-lore');
-            const p2Lore = document.getElementById('presenter-p2-lore');
+        const p1Lore = document.getElementById('presenter-p1-lore');
+        const p2Lore = document.getElementById('presenter-p2-lore');
+        const p1Life = document.getElementById('presenter-p1-life');
+        const p2Life = document.getElementById('presenter-p2-life');
+        
+        // Hide all game-specific displays initially
+        document.getElementById('presenter-p1-prizes').classList.add('hidden');
+        document.getElementById('presenter-p2-prizes').classList.add('hidden');
+        document.getElementById('presenter-p1-actions').classList.add('hidden');
+        document.getElementById('presenter-p2-actions').classList.add('hidden');
+        p1Lore.classList.add('hidden');
+        p2Lore.classList.add('hidden');
+        p1Life.classList.add('hidden');
+        p2Life.classList.add('hidden');
+
+
+        if (game.tcg === 'pokemon') {
+            document.getElementById('presenter-p1-prizes').classList.remove('hidden');
+            document.getElementById('presenter-p2-prizes').classList.remove('hidden');
+            renderPrizesInArc(p1, 'presenter-p1-prizes', true);
+            renderPrizesInArc(p2, 'presenter-p2-prizes', false);
+            renderPresenterActions(p1, 'presenter-p1-actions');
+            renderPresenterActions(p2, 'presenter-p2-actions');
+        } else if (game.tcg === 'lorcana') {
             p1Lore.classList.remove('hidden');
             p2Lore.classList.remove('hidden');
             p1Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p1.loreCount} Lore</span>`;
             p2Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p2.loreCount} Lore</span>`;
-        } else { // Pokemon
-            document.getElementById('presenter-p1-prizes').classList.remove('hidden');
-            document.getElementById('presenter-p2-prizes').classList.remove('hidden');
-            document.getElementById('presenter-p1-lore').classList.add('hidden');
-            document.getElementById('presenter-p2-lore').classList.add('hidden');
-            renderPrizesInArc(p1, 'presenter-p1-prizes', true);
-            renderPrizesInArc(p2, 'presenter-p2-prizes', false);
-            // New Feature: Render Presenter Emblems
-            renderPresenterActions(p1, 'presenter-p1-actions');
-            renderPresenterActions(p2, 'presenter-p2-actions');
+        } else if (game.tcg === 'mtg') {
+            p1Life.classList.remove('hidden');
+            p2Life.classList.remove('hidden');
+            p1Life.textContent = `${p1.life} Life Remaining`;
+            p2Life.textContent = `${p2.life} Life Remaining`;
         }
 
         const countdownTimerEl = document.getElementById('presenter-timer');
@@ -785,7 +866,6 @@ let PUSHER_CLUSTER = null;
         }
     };
 
-    // New Feature: Render Presenter Action Emblems
     const renderPresenterActions = (player, containerId) => {
         const container = document.getElementById(containerId);
         if (!appState.game.additionalTrackingEnabled) {
@@ -1185,7 +1265,8 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-end-turn');
         appState.channel.unbind('client-scoop-game');
         appState.channel.unbind('client-update-lore');
-        appState.channel.unbind('client-update-action'); // New Feature
+        appState.channel.unbind('client-update-action');
+        appState.channel.unbind('client-update-life');
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
             const playerId = metadata.user_id;
@@ -1214,7 +1295,20 @@ let PUSHER_CLUSTER = null;
             }
         });
 
-        // New Feature: Handle action updates from guest
+        appState.channel.bind('client-update-life', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].life = data.life;
+                if (data.life <= 0) {
+                    const player = appState.game.players[playerId];
+                    document.getElementById('zero-life-prompt').textContent = `${player.name} is at 0 life. Did they lose the game?`;
+                    showModal('zeroLifeModal');
+                }
+                broadcastGameState();
+                fullRender();
+            }
+        });
+
         appState.channel.bind('client-update-action', (data, metadata) => {
             const playerId = metadata.user_id;
             if (appState.game.players[playerId]) {
@@ -1227,7 +1321,6 @@ let PUSHER_CLUSTER = null;
         appState.channel.bind('client-end-turn', (data, metadata) => {
             const previousPlayerId = metadata.user_id;
             if (appState.game.turn === previousPlayerId) {
-                // Reset actions for the player whose turn just ended
                 if (appState.game.players[previousPlayerId]) {
                     appState.game.players[previousPlayerId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
                 }
@@ -1314,6 +1407,7 @@ let PUSHER_CLUSTER = null;
         Object.values(appState.game.players).forEach(p => {
             p.prizesTaken = [];
             p.loreCount = 0;
+            p.life = appState.game.startingLife;
             p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
         });
 
@@ -1372,28 +1466,28 @@ let PUSHER_CLUSTER = null;
     const setupGameSettings = (tcg) => {
         appState.game.tcg = tcg;
         document.getElementById('player-name-input').value = appState.playerName;
-        showModal('gameSettingsModal');
         
-        const isPokemon = tcg === 'pokemon';
-        document.getElementById('prize-card-settings').style.display = isPokemon ? 'block' : 'none';
-        document.getElementById('additional-tracking-settings').style.display = isPokemon ? 'block' : 'none'; // New
-        document.getElementById('lorcana-lore-settings').style.display = isPokemon ? 'none' : 'block';
+        document.getElementById('prize-card-settings').style.display = tcg === 'pokemon' ? 'block' : 'none';
+        document.getElementById('additional-tracking-settings').style.display = tcg === 'pokemon' ? 'block' : 'none';
+        document.getElementById('lorcana-lore-settings').style.display = tcg === 'lorcana' ? 'block' : 'none';
+        document.getElementById('mtg-life-settings').style.display = tcg === 'mtg' ? 'block' : 'none';
 
         const isCountdown = appState.game.timerType === 'countdown';
         document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
         document.getElementById('number-of-games-settings').style.display = isCountdown ? 'block' : 'none';
         document.getElementById('chess-timer-settings').style.display = isCountdown ? 'none' : 'block';
+        showModal('gameSettingsModal');
     };
 
     document.getElementById('select-pokemon').addEventListener('click', () => setupGameSettings('pokemon'));
     document.getElementById('select-lorcana').addEventListener('click', () => setupGameSettings('lorcana'));
+    document.getElementById('select-mtg').addEventListener('click', () => setupGameSettings('mtg'));
 
     document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
         appState.game.prizeCount = parseInt(btn.dataset.prizes);
     }));
-    // New Feature: Tracking Toggle Handler
     document.querySelectorAll('.tracking-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.tracking-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
@@ -1424,7 +1518,7 @@ let PUSHER_CLUSTER = null;
         appState.game.countdownMinutes = parseInt(document.getElementById('countdown-minutes').value) || 30;
         appState.game.chessMinutes = parseInt(document.getElementById('chess-minutes').value) || 20;
         appState.game.loreToWin = parseInt(document.getElementById('lore-to-win-input').value) || 20;
-        // Note: additionalTrackingEnabled is already set by its button handler
+        appState.game.startingLife = parseInt(document.getElementById('starting-life-input').value) || 20;
 
         const sessionData = {
             roomCode: generateRoomCode(),
@@ -1551,6 +1645,12 @@ let PUSHER_CLUSTER = null;
 
     document.getElementById('cancel-issue-win-btn').addEventListener('click', () => hideModal('issueWinModal'));
 
+    document.getElementById('zero-life-yes-btn').addEventListener('click', () => {
+        hideModal('zeroLifeModal');
+        renderIssueWinModal();
+    });
+    document.getElementById('zero-life-no-btn').addEventListener('click', () => hideModal('zeroLifeModal'));
+
     const startNextGame = () => {
         hideModal('winnerModal');
         renderChooseFirstPlayerModal();
@@ -1560,6 +1660,7 @@ let PUSHER_CLUSTER = null;
         Object.values(appState.game.players).forEach(p => {
             p.prizesTaken = [];
             p.loreCount = 0;
+            p.life = appState.game.startingLife;
             p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
         });
         appState.game.status = 'waiting';
@@ -1589,7 +1690,6 @@ let PUSHER_CLUSTER = null;
         }
     });
 
-    // New Feature: Action Button Click Handler
     document.getElementById('additional-tracking-buttons').addEventListener('click', (e) => {
         const btn = e.target.closest('.action-btn');
         if (!btn) return;
@@ -1608,8 +1708,36 @@ let PUSHER_CLUSTER = null;
     });
 
     document.body.addEventListener('click', (e) => {
+        const myPlayer = appState.game.players[appState.myId];
+        if (!myPlayer) return;
+
+        let lifeChanged = false;
+        let newLife = myPlayer.life;
+
+        if (e.target.closest('#life-up-btn')) {
+            newLife++;
+            lifeChanged = true;
+        }
+        if (e.target.closest('#life-down-btn')) {
+            newLife--;
+            lifeChanged = true;
+        }
+
+        if (lifeChanged) {
+            myPlayer.life = newLife;
+            if (appState.isHost) {
+                if(newLife <= 0) {
+                    document.getElementById('zero-life-prompt').textContent = `${myPlayer.name} is at 0 life. Did they lose the game?`;
+                    showModal('zeroLifeModal');
+                }
+                broadcastGameState();
+                fullRender();
+            } else {
+                appState.channel.trigger('client-update-life', { life: newLife });
+            }
+        }
+        
         if (e.target.closest('#lore-up-btn')) {
-            const myPlayer = appState.game.players[appState.myId];
             myPlayer.loreCount++;
             if (appState.isHost) {
                 if (myPlayer.loreCount >= appState.game.loreToWin) {
@@ -1623,7 +1751,6 @@ let PUSHER_CLUSTER = null;
             }
         }
         if (e.target.closest('#lore-down-btn')) {
-            const myPlayer = appState.game.players[appState.myId];
             if (myPlayer.loreCount > 0) {
                 myPlayer.loreCount--;
                 if (appState.isHost) {
@@ -1640,8 +1767,9 @@ let PUSHER_CLUSTER = null;
             const otherPlayerId = pIds.find(id => id !== myId);
             
             if (appState.isHost) {
-                // Reset actions for the current player before ending the turn
-                appState.game.players[myId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
+                if (appState.game.players[myId]) {
+                    appState.game.players[myId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
+                }
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
                 fullRender();
