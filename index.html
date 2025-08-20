@@ -956,6 +956,8 @@ let PUSHER_CLUSTER = null;
     const showWinnerAnimation = (winner, isRoundWin = false, isTie = false) => {
         const winnerTitle = document.getElementById('winner-title');
         const winnerName = document.getElementById('winner-name');
+        const buttonContainer = document.getElementById('winner-modal-buttons');
+        buttonContainer.innerHTML = ''; // Clear previous buttons
 
         if (isTie) {
             winnerTitle.textContent = "TIE!";
@@ -967,16 +969,16 @@ let PUSHER_CLUSTER = null;
             return; // No winner to show
         }
         
-        const buttonContainer = document.getElementById('winner-modal-buttons');
-        buttonContainer.innerHTML = '';
-        if (appState.isHost) {
+        // FIX: Capture the host status at the time the modal is shown.
+        const wasHostWhenModalOpened = appState.isHost;
+
+        if (wasHostWhenModalOpened) {
             const btn = document.createElement('button');
-            // If the status is 'game-over', it means a game in a Bo3 series just ended.
             if (appState.game.status === 'game-over') {
                 btn.id = 'next-game-btn';
                 btn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
                 btn.textContent = 'Next Game';
-            } else { // This covers 'finished' status for both Basic and Bo3 matches.
+            } else {
                 btn.id = 'play-again-btn';
                 btn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
                 btn.textContent = 'Play Again';
