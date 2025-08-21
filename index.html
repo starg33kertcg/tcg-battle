@@ -337,9 +337,7 @@
         <div id="issue-win-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
             <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
                 <h2 class="text-2xl font-bold mb-4">End Game</h2>
-                <div id="issue-win-options" class="space-y-3">
-                    <!-- Player buttons will be injected here -->
-                </div>
+                <div id="issue-win-options" class="space-y-3"></div>
                 <button id="cancel-issue-win-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
             </div>
         </div>
@@ -358,9 +356,7 @@
         <div id="calculator-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
             <div class="bg-gray-800 rounded-lg p-4 w-full max-w-xs shadow-xl">
                 <div id="calculator-display" class="calculator-display rounded p-2 mb-4 text-right text-3xl font-mono text-white break-words">0</div>
-                <div id="calculator-buttons" class="calculator-grid">
-                    <!-- Buttons will be injected here -->
-                </div>
+                <div id="calculator-buttons" class="calculator-grid"></div>
                 <button id="close-calculator-btn" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Close</button>
             </div>
         </div>
@@ -1583,6 +1579,7 @@ let PUSHER_CLUSTER = null;
             oscillator.stop(audioContext.currentTime + 1);
         } catch (e) { console.error("Could not play buzzer sound:", e); }
     };
+
     // --- CALCULATOR LOGIC ---
     const initCalculator = () => {
         const display = document.getElementById('calculator-display');
@@ -1636,17 +1633,21 @@ let PUSHER_CLUSTER = null;
 
         // Create and render calculator buttons
         const buttonLayout = [
-            'C', '*', '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '=', '0'
+            '7', '8', '9', '+',
+            '4', '5', '6', '-',
+            '1', '2', '3', '*',
+            'C', '0', '='
         ];
         buttonLayout.forEach(val => {
             const btn = document.createElement('button');
             btn.textContent = val;
             btn.className = 'calculator-btn text-white font-bold py-4 rounded-lg text-xl';
-            if (val === 'C' || val === '*' || val === '-' || val === '+' || val === '=') {
+            if (['C', '*', '-', '+', '='].includes(val)) {
                 btn.classList.add('bg-gray-700');
             }
-            if (val === '=') btn.style.gridColumn = 'span 2';
-            if (val === '0') btn.style.gridColumn = 'span 3';
+            if (val === '=') {
+                btn.style.gridColumn = 'span 2';
+            }
             btn.dataset.value = val;
             buttonsContainer.appendChild(btn);
         });
@@ -1655,7 +1656,7 @@ let PUSHER_CLUSTER = null;
             const value = e.target.dataset.value;
             if (!value) return;
 
-            if (!isNaN(parseFloat(value))) {
+            if (!isNaN(parseFloat(value)) || value === '.') {
                 handleNumber(value);
             } else if (value === 'C') {
                 handleClear();
@@ -2019,34 +2020,35 @@ let PUSHER_CLUSTER = null;
             document.exitFullscreen();
         }
     });
+
 document.getElementById('yugioh-controls').addEventListener('click', (e) => {
-        const myPlayer = appState.game.players[appState.myId];
-        if (!myPlayer) return;
+    const myPlayer = appState.game.players[appState.myId];
+    if (!myPlayer) return;
 
-        const lpBtn = e.target.closest('.lp-btn');
-        if (lpBtn) {
-            const amount = parseInt(lpBtn.dataset.lp, 10);
-            let newLP = myPlayer.lp + amount;
-            if (newLP < 0) newLP = 0; // Prevent LP from going below 0
+    const lpBtn = e.target.closest('.lp-btn');
+    if (lpBtn) {
+        const amount = parseInt(lpBtn.dataset.lp, 10);
+        let newLP = myPlayer.lp + amount;
+        if (newLP < 0) newLP = 0; // Prevent LP from going below 0
 
-            if (appState.isHost) {
-                myPlayer.lp = newLP;
-                if (newLP <= 0) {
-                    const opponentId = Object.keys(appState.game.players).find(id => id !== appState.myId);
-                    if (opponentId) handleGameWin(opponentId);
-                } else {
-                    broadcastGameState();
-                    fullRender();
-                }
+        if (appState.isHost) {
+            myPlayer.lp = newLP;
+            if (newLP <= 0) {
+                const opponentId = Object.keys(appState.game.players).find(id => id !== appState.myId);
+                if (opponentId) handleGameWin(opponentId);
             } else {
-                appState.channel.trigger('client-update-lp', { lp: newLP });
+                broadcastGameState();
+                fullRender();
             }
+        } else {
+            appState.channel.trigger('client-update-lp', { lp: newLP });
         }
+    }
 
-        if (e.target.closest('#calculator-open-btn')) {
-            showModal('calculatorModal');
-        }
-    });
+    if (e.target.closest('#calculator-open-btn')) {
+        showModal('calculatorModal');
+    }
+});
 // --- INITIALIZATION ---
 const init = async () => {
     // First, determine the view and render the basic UI
@@ -2115,4 +2117,3 @@ const init = async () => {
 
 </body>
 </html>
-
