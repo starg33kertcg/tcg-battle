@@ -1164,6 +1164,10 @@ let PUSHER_CLUSTER = null;
     };
 
     const fullRender = () => {
+        if (appState.game.status === 'setting_life' && !views.setStartingLifeModal.classList.contains('hidden')) {
+            showModal('setStartingLifeModal');
+        }
+
         renderGameRoom();
         renderPresenter();
 
@@ -1469,6 +1473,21 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-update-action');
         appState.channel.unbind('client-update-life');
         appState.channel.unbind('client-update-lp');
+        appState.channel.bind('client-submit-life', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].life = data.life;
+                appState.game.players[playerId].lifeSubmitted = true;
+                
+                const allSubmitted = Object.values(appState.game.players).every(p => p.lifeSubmitted);
+                if (allSubmitted) {
+                    hideModal('setStartingLifeModal');
+                    renderChooseFirstPlayerModal();
+                }
+                broadcastGameState();
+                fullRender();
+            }
+        });
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
             const playerId = metadata.user_id;
@@ -2127,6 +2146,26 @@ let PUSHER_CLUSTER = null;
             document.getElementById('game-menu-dropdown').classList.add('hidden');
         }
     });
+    document.getElementById('submit-starting-life-btn').addEventListener('click', () => {
+        const lifeInput = document.getElementById('player-starting-life-input');
+        const life = parseInt(lifeInput.value, 10) || 5;
+        
+        document.getElementById('submit-starting-life-btn').classList.add('hidden');
+        document.getElementById('waiting-for-life-submission').classList.remove('hidden');
+
+        if (appState.isHost) {
+            appState.game.players[appState.myId].life = life;
+            appState.game.players[appState.myId].lifeSubmitted = true;
+            const allSubmitted = Object.values(appState.game.players).every(p => p.lifeSubmitted);
+            if (allSubmitted) {
+                hideModal('setStartingLifeModal');
+                renderChooseFirstPlayerModal();
+            }
+            broadcastGameState();
+        } else {
+            appState.channel.trigger('client-submit-life', { life });
+        }
+    });
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     fullscreenBtn.addEventListener('click', () => {
         const elem = document.documentElement;
@@ -2235,3 +2274,4 @@ const init = async () => {
 
 </body>
 </html>
+
