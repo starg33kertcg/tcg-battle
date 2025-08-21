@@ -1166,6 +1166,8 @@ let PUSHER_CLUSTER = null;
     const fullRender = () => {
         if (appState.game.status === 'setting_life') {
             showModal('setStartingLifeModal');
+        } else {
+            hideModal('setStartingLifeModal');
         }
 
         renderGameRoom();
@@ -1479,8 +1481,11 @@ let PUSHER_CLUSTER = null;
                 appState.game.players[playerId].life = data.life;
                 appState.game.players[playerId].lifeSubmitted = true;
                 
-                const allSubmitted = Object.values(appState.game.players).every(p => p.lifeSubmitted);
+                const allPlayers = Object.values(appState.game.players);
+                const allSubmitted = allPlayers.length >= 2 && allPlayers.every(p => p.lifeSubmitted);
+
                 if (allSubmitted) {
+                    appState.game.status = 'waiting'; // Change status to hide modal for all
                     hideModal('setStartingLifeModal');
                     renderChooseFirstPlayerModal();
                 }
@@ -2357,5 +2362,6 @@ const init = async () => {
 
 </body>
 </html>
+
 
 
