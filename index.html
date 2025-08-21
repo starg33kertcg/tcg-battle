@@ -1583,6 +1583,92 @@ let PUSHER_CLUSTER = null;
             oscillator.stop(audioContext.currentTime + 1);
         } catch (e) { console.error("Could not play buzzer sound:", e); }
     };
+    // --- CALCULATOR LOGIC ---
+    const initCalculator = () => {
+        const display = document.getElementById('calculator-display');
+        const buttonsContainer = document.getElementById('calculator-buttons');
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+
+        const updateDisplay = () => {
+            display.textContent = currentInput;
+        };
+
+        const handleNumber = (value) => {
+            if (currentInput === '0') {
+                currentInput = value;
+            } else {
+                currentInput += value;
+            }
+        };
+
+        const handleOperator = (value) => {
+            if (operator !== null) {
+                handleEquals();
+            }
+            previousInput = currentInput;
+            currentInput = '0';
+            operator = value;
+        };
+
+        const handleEquals = () => {
+            if (operator === null || previousInput === '') return;
+            const prev = parseFloat(previousInput);
+            const curr = parseFloat(currentInput);
+            let result;
+            switch (operator) {
+                case '+': result = prev + curr; break;
+                case '-': result = prev - curr; break;
+                case '*': result = prev * curr; break;
+                default: return;
+            }
+            currentInput = result.toString();
+            operator = null;
+            previousInput = '';
+        };
+
+        const handleClear = () => {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+        };
+
+        // Create and render calculator buttons
+        const buttonLayout = [
+            'C', '*', '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '=', '0'
+        ];
+        buttonLayout.forEach(val => {
+            const btn = document.createElement('button');
+            btn.textContent = val;
+            btn.className = 'calculator-btn text-white font-bold py-4 rounded-lg text-xl';
+            if (val === 'C' || val === '*' || val === '-' || val === '+' || val === '=') {
+                btn.classList.add('bg-gray-700');
+            }
+            if (val === '=') btn.style.gridColumn = 'span 2';
+            if (val === '0') btn.style.gridColumn = 'span 3';
+            btn.dataset.value = val;
+            buttonsContainer.appendChild(btn);
+        });
+
+        buttonsContainer.addEventListener('click', (e) => {
+            const value = e.target.dataset.value;
+            if (!value) return;
+
+            if (!isNaN(parseFloat(value))) {
+                handleNumber(value);
+            } else if (value === 'C') {
+                handleClear();
+            } else if (value === '=') {
+                handleEquals();
+            } else {
+                handleOperator(value);
+            }
+            updateDisplay();
+        });
+
+        document.getElementById('close-calculator-btn').addEventListener('click', () => hideModal('calculatorModal'));
+    };
 
     // --- EVENT HANDLERS ---
     document.getElementById('create-session-btn').addEventListener('click', () => showView('tcgSelection'));
@@ -1933,7 +2019,34 @@ let PUSHER_CLUSTER = null;
             document.exitFullscreen();
         }
     });
+document.getElementById('yugioh-controls').addEventListener('click', (e) => {
+        const myPlayer = appState.game.players[appState.myId];
+        if (!myPlayer) return;
 
+        const lpBtn = e.target.closest('.lp-btn');
+        if (lpBtn) {
+            const amount = parseInt(lpBtn.dataset.lp, 10);
+            let newLP = myPlayer.lp + amount;
+            if (newLP < 0) newLP = 0; // Prevent LP from going below 0
+
+            if (appState.isHost) {
+                myPlayer.lp = newLP;
+                if (newLP <= 0) {
+                    const opponentId = Object.keys(appState.game.players).find(id => id !== appState.myId);
+                    if (opponentId) handleGameWin(opponentId);
+                } else {
+                    broadcastGameState();
+                    fullRender();
+                }
+            } else {
+                appState.channel.trigger('client-update-lp', { lp: newLP });
+            }
+        }
+
+        if (e.target.closest('#calculator-open-btn')) {
+            showModal('calculatorModal');
+        }
+    });
 // --- INITIALIZATION ---
 const init = async () => {
     // First, determine the view and render the basic UI
@@ -1996,8 +2109,10 @@ const init = async () => {
 };
 
     init();
+    initCalculator();
 });
 </script>
 
 </body>
 </html>
+
