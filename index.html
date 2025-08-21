@@ -874,7 +874,7 @@ let PUSHER_CLUSTER = null;
     const opponentId = Object.keys(appState.game.players).find(id => id !== appState.myId);
     const opponent = appState.game.players[opponentId];
     const finalAttackContainer = document.getElementById('final-attack-container');
-    if (opponent && opponent.opLife <= 0) {
+    if (opponent && opponent.opLife <= 0 && (appState.game.status === 'active' || appState.game.status === 'overtime')) {
         finalAttackContainer.classList.remove('hidden');
     } else {
         finalAttackContainer.classList.add('hidden');
@@ -2417,6 +2417,7 @@ const init = async () => {
 
 </body>
 </html>
+
 
 
 
