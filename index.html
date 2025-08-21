@@ -1006,7 +1006,7 @@ let PUSHER_CLUSTER = null;
             p2Lore.classList.remove('hidden');
             p1Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p1.loreCount} Lore</span>`;
             p2Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p2.loreCount} Lore</span>`;
-        } else if (game.tcg === 'mtg') {
+        } else if (game.tcg === 'mtg' || game.tcg === 'onepiece') {
             p1Life.classList.remove('hidden');
             p2Life.classList.remove('hidden');
             p1Life.textContent = `${p1.life} Life Remaining`;
@@ -1475,6 +1475,10 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-update-action');
         appState.channel.unbind('client-update-life');
         appState.channel.unbind('client-update-lp');
+        appState.channel.unbind('client-submit-life');
+        appState.channel.unbind('client-update-don');
+        appState.channel.unbind('client-final-attack');
+
         appState.channel.bind('client-submit-life', (data, metadata) => {
             const playerId = metadata.user_id;
             if (appState.game.players[playerId]) {
@@ -1506,26 +1510,6 @@ let PUSHER_CLUSTER = null;
         appState.channel.bind('client-final-attack', (data, metadata) => {
             const winnerId = metadata.user_id;
             handleGameWin(winnerId);
-        });
-        appState.channel.unbind('client-submit-life');
-
-        appState.channel.bind('client-submit-life', (data, metadata) => {
-            const playerId = metadata.user_id;
-            if (appState.game.players[playerId]) {
-                appState.game.players[playerId].life = data.life;
-                appState.game.players[playerId].lifeSubmitted = true;
-                
-                const allPlayers = Object.values(appState.game.players);
-                const allSubmitted = allPlayers.length >= 2 && allPlayers.every(p => p.lifeSubmitted);
-
-                if (allSubmitted) {
-                    appState.game.status = 'waiting'; // Change status to hide modal for all
-                    hideModal('setStartingLifeModal');
-                    renderChooseFirstPlayerModal();
-                }
-                broadcastGameState();
-                fullRender();
-            }
         });
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
@@ -1559,7 +1543,7 @@ let PUSHER_CLUSTER = null;
             const playerId = metadata.user_id;
             if (appState.game.players[playerId]) {
                 appState.game.players[playerId].life = data.life;
-                if (data.life <= 0) {
+                if (data.life <= 0 && appState.game.tcg === 'mtg') { // Only for MTG
                     const player = appState.game.players[playerId];
                     document.getElementById('zero-life-prompt').textContent = `${player.name} is at 0 life. Did they lose the game?`;
                     showModal('zeroLifeModal');
@@ -1597,6 +1581,10 @@ let PUSHER_CLUSTER = null;
             if (appState.game.turn === previousPlayerId) {
                 if (appState.game.players[previousPlayerId]) {
                     appState.game.players[previousPlayerId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
+                     if(appState.game.tcg === 'onepiece' && appState.game.donTrackerEnabled) {
+                        appState.game.players[previousPlayerId].don.active = appState.game.players[previousPlayerId].don.active + appState.game.players[previousPlayerId].don.rested;
+                        appState.game.players[previousPlayerId].don.rested = 0;
+                    }
                 }
                 appState.game.turn = data.turn;
                 broadcastGameState();
@@ -2362,6 +2350,3 @@ const init = async () => {
 
 </body>
 </html>
-
-
-
