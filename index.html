@@ -219,10 +219,10 @@
                 </div>
                 <div id="select-onepiece" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-blue-400 hover:bg-gray-600 transition-colors">
                 <div class="h-24 w-24 mx-auto mb-2 bg-black rounded-full flex items-center justify-center border-4 border-gray-800">
-                <svg class="w-16 h-16 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
+                <svg class="h-24 w-24 mx-auto mb-2 text-black" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="10"/>
+                        <line x1="25" y1="25" x2="75" y2="75" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+                        <line x1="75" y1="25" x2="25" y2="75" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
                     </svg>
                  </div>
                 <h3 class="font-bold text-lg">One Piece</h3>
@@ -1507,22 +1507,23 @@ let PUSHER_CLUSTER = null;
     appState.channel.unbind('client-update-don');         // ADDITION
     appState.channel.unbind('client-final-attack');       // ADDITION
 
-    appState.channel.bind('client-submit-leader-life', (data, metadata) => { // --- ADDITION START ---
+    appState.channel.bind('client-submit-leader-life', (data, metadata) => {
         const playerId = metadata.user_id;
         if (appState.game.players[playerId]) {
             const player = appState.game.players[playerId];
             player.opLife = data.life;
-            player.opMaxLife = data.life; // Set max life for Bo3
+            player.opMaxLife = data.life;
             player.leaderLifeSet = true;
 
             const allPlayersSet = Object.values(appState.game.players).every(p => p.leaderLifeSet);
             if (allPlayersSet) {
+                hideModal('setLeaderLifeModal'); 
                 renderChooseFirstPlayerModal();
             }
             broadcastGameState();
             fullRender();
         }
-    }); // --- ADDITION END ---
+    }); 
 
     appState.channel.bind('client-update-op-life', (data, metadata) => { // --- ADDITION START ---
         const playerId = metadata.user_id;
@@ -2267,6 +2268,7 @@ document.getElementById('yugioh-controls').addEventListener('click', (e) => {
         
         const allPlayersSet = Object.values(appState.game.players).every(p => p.leaderLifeSet);
         if (allPlayersSet) {
+            hideModal('setLeaderLifeModal'); // --- ADD THIS LINE ---
             renderChooseFirstPlayerModal();
         }
         broadcastGameState();
@@ -2405,4 +2407,5 @@ const init = async () => {
 
 </body>
 </html>
+
 
