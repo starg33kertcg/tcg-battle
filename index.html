@@ -1489,7 +1489,7 @@ let PUSHER_CLUSTER = null;
                 const allSubmitted = allPlayers.length >= 2 && allPlayers.every(p => p.lifeSubmitted);
 
                 if (allSubmitted) {
-                    appState.game.status = 'waiting'; // Change status to hide modal for all
+                    appState.game.status = 'waiting'; // This tells clients to close the modal
                     hideModal('setStartingLifeModal');
                     renderChooseFirstPlayerModal();
                 }
@@ -1692,6 +1692,10 @@ let PUSHER_CLUSTER = null;
                 });
             }
         } else {
+             // Reset life submission for the next game in the series
+            if (appState.game.tcg === 'onepiece') {
+                Object.values(appState.game.players).forEach(p => p.lifeSubmitted = false);
+            }
             // Just advance to the next game in the match
             appState.game.currentGame++;
         }
@@ -2350,3 +2354,4 @@ const init = async () => {
 
 </body>
 </html>
+
