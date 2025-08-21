@@ -1473,6 +1473,35 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-update-action');
         appState.channel.unbind('client-update-life');
         appState.channel.unbind('client-update-lp');
+        appState.channel.bind('client-submit-life', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].life = data.life;
+                appState.game.players[playerId].lifeSubmitted = true;
+                
+                const allSubmitted = Object.values(appState.game.players).every(p => p.lifeSubmitted);
+                if (allSubmitted) {
+                    hideModal('setStartingLifeModal');
+                    renderChooseFirstPlayerModal();
+                }
+                broadcastGameState();
+                fullRender();
+            }
+        });
+
+        appState.channel.bind('client-update-don', (data, metadata) => {
+            const playerId = metadata.user_id;
+            if (appState.game.players[playerId]) {
+                appState.game.players[playerId].don = data.don;
+                broadcastGameState();
+                fullRender();
+            }
+        });
+
+        appState.channel.bind('client-final-attack', (data, metadata) => {
+            const winnerId = metadata.user_id;
+            handleGameWin(winnerId);
+        });
         appState.channel.unbind('client-submit-life');
 
         appState.channel.bind('client-submit-life', (data, metadata) => {
@@ -2169,6 +2198,50 @@ let PUSHER_CLUSTER = null;
             appState.channel.trigger('client-submit-life', { life });
         }
     });
+    document.getElementById('onepiece-controls').addEventListener('click', (e) => {
+        const myPlayer = appState.game.players[appState.myId];
+        if (!myPlayer) return;
+
+        // Final Attack Button
+        if (e.target.closest('#final-attack-btn')) {
+            if (appState.isHost) {
+                handleGameWin(appState.myId);
+            } else {
+                appState.channel.trigger('client-final-attack', {});
+            }
+            return;
+        }
+
+        // DON!! Buttons
+        const donBtn = e.target.closest('.don-btn');
+        if (donBtn) {
+            const change = parseInt(donBtn.dataset.donChange, 10);
+            let newActiveDon = myPlayer.don.active + change;
+            if (newActiveDon < 0) newActiveDon = 0;
+            
+            if (appState.isHost) {
+                myPlayer.don.active = newActiveDon;
+                broadcastGameState();
+                fullRender();
+            } else {
+                appState.channel.trigger('client-update-don', { don: { ...myPlayer.don, active: newActiveDon } });
+            }
+        }
+
+        // Rest DON!! Button
+        if (e.target.closest('#rest-don-btn')) {
+            if (myPlayer.don.active > 0) {
+                const newDon = { active: myPlayer.don.active - 1, rested: myPlayer.don.rested + 1 };
+                if (appState.isHost) {
+                    myPlayer.don = newDon;
+                    broadcastGameState();
+                    fullRender();
+                } else {
+                    appState.channel.trigger('client-update-don', { don: newDon });
+                }
+            }
+        }
+    });
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     fullscreenBtn.addEventListener('click', () => {
         const elem = document.documentElement;
@@ -2277,3 +2350,4 @@ const init = async () => {
 
 </body>
 </html>
+
