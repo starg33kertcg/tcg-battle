@@ -1473,6 +1473,8 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-update-action');
         appState.channel.unbind('client-update-life');
         appState.channel.unbind('client-update-lp');
+        appState.channel.unbind('client-submit-life');
+
         appState.channel.bind('client-submit-life', (data, metadata) => {
             const playerId = metadata.user_id;
             if (appState.game.players[playerId]) {
@@ -1751,6 +1753,7 @@ let PUSHER_CLUSTER = null;
             '1', '2', '3', '*',
             'C', '0', '='
         ];
+        buttonsContainer.innerHTML = ''; // Clear previous buttons
         buttonLayout.forEach(val => {
             const btn = document.createElement('button');
             btn.textContent = val;
@@ -2274,4 +2277,3 @@ const init = async () => {
 
 </body>
 </html>
-
