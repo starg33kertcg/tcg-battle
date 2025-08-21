@@ -1995,6 +1995,8 @@ let PUSHER_CLUSTER = null;
             if (appState.game.tcg === 'onepiece' && appState.game.status === 'waiting') {
         appState.game.status = 'setting_life';
         Object.values(appState.game.players).forEach(p => p.leaderLifeSet = false);
+        document.getElementById('leader-life-input-area').classList.remove('hidden');
+        document.getElementById('waiting-for-opponent-life').classList.add('hidden');
         showModal('setLeaderLifeModal');
         broadcastGameState(); // Tell guests to show the modal too
     } else {
@@ -2071,29 +2073,39 @@ let PUSHER_CLUSTER = null;
     };
 
     const restartRound = () => {
-        Object.values(appState.game.players).forEach(p => {
-            p.prizesTaken = [];
-            p.loreCount = 0;
-            p.life = appState.game.startingLife;
-            p.lp = appState.game.startingLP;
-            p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
-        });
-        appState.game.status = 'waiting';
-        appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
-        appState.game.wins = {};
-        appState.game.currentGame = 1;
-        appState.game.roundWinnerId = null;
-        appState.game.isTie = false;
-        appState.game.winnerId = null;
-        appState.winnerAnnounced = false;
-        if(timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-        hideModal('winnerModal');
-        broadcastGameState();
-        fullRender();
-    };
+    // Reset all player-specific data, including for One Piece
+    Object.values(appState.game.players).forEach(p => {
+        p.prizesTaken = [];
+        p.loreCount = 0;
+        p.life = appState.game.startingLife;
+        p.lp = appState.game.startingLP;
+        p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
+        // --- ADDITIONS to properly reset One Piece state ---
+        p.opLife = 0;
+        p.opMaxLife = 0;
+        p.don = { active: 0, rested: 0 };
+        p.leaderLifeSet = false;
+    });
+    
+    // Reset all game-wide data
+    appState.game.status = 'waiting';
+    appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
+    appState.game.wins = {};
+    appState.game.currentGame = 1;
+    appState.game.roundWinnerId = null;
+    appState.game.isTie = false;
+    appState.game.winnerId = null;
+    appState.winnerAnnounced = false;
+
+    if(timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    
+    hideModal('winnerModal');
+    broadcastGameState();
+    fullRender();
+};
 
     document.getElementById('winner-modal-buttons').addEventListener('click', (e) => {
         if (e.target.id === 'play-again-btn' && appState.isHost) {
@@ -2405,6 +2417,7 @@ const init = async () => {
 
 </body>
 </html>
+
 
 
 
