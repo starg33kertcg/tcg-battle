@@ -217,13 +217,9 @@
                     <img src="https://tcgbattle.netlify.app/images/yugioh.png" alt="Yu-Gi-Oh!" class="h-24 mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x100/78716C/FFFFFF?text=YGO';">
                     <h3 class="font-bold text-lg">Yu-Gi-Oh!</h3>
                 </div>
-                <div id="select-onepiece" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-blue-400 hover:bg-gray-600 transition-colors">
-                     <svg class="h-24 w-24 mx-auto mb-2 text-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="10"/>
-                        <line x1="25" y1="25" x2="75" y2="75" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
-                        <line x1="75" y1="25" x2="25" y2="75" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
-                    </svg>
-                    <h3 class="font-bold text-lg">One Piece</h3>
+                <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
+                    <h3 class="font-bold text-lg text-gray-400">One Piece</h3>
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
                 </div>
                  <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
                     <h3 class="font-bold text-lg text-gray-400">Dragonball Z</h3>
@@ -269,13 +265,6 @@
                     <div id="yugioh-lp-settings" class="hidden">
                         <label class="font-bold">Starting Life Points</label>
                         <input type="number" id="starting-lp-input" value="8000" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-1">
-                    </div>
-                    <div id="onepiece-settings" class="hidden">
-                         <label class="font-bold">DON!! Tracker</label>
-                        <div class="flex space-x-2 mt-1">
-                            <button data-don="false" class="don-option-btn flex-1 bg-blue-600 text-white rounded p-2">Disable</button>
-                            <button data-don="true" class="don-option-btn flex-1 bg-gray-600 text-white rounded p-2">Enable</button>
-                        </div>
                     </div>
                     <div>
                         <label class="font-bold">Timer Type</label>
@@ -332,15 +321,6 @@
                 <h2 class="text-2xl font-bold mb-4">Who Goes First?</h2>
                 <div id="first-player-options" class="space-y-3">
                 </div>
-            </div>
-        </div>
-
-        <div id="set-starting-life-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div class="bg-gray-700 rounded-lg p-6 w-full max-w-md text-center">
-                <h2 class="text-2xl font-bold mb-4">Set Your Leader's Life</h2>
-                <input type="number" id="player-starting-life-input" value="5" class="w-full bg-gray-800 border border-gray-600 rounded p-2 mt-2 text-center text-2xl">
-                <button id="submit-starting-life-btn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-xl">Submit</button>
-                <p id="waiting-for-life-submission" class="text-gray-400 mt-4 hidden">Waiting for opponent...</p>
             </div>
         </div>
 
@@ -447,18 +427,6 @@
                         <div id="lp-tracker" class="flex flex-col items-center">
                         </div>
                     </div>
-
-                    <div id="onepiece-controls" class="hidden">
-                         <div id="onepiece-life-tracker" class="mb-4">
-                            <h3 class="font-bold text-xl mb-2">Your Life</h3>
-                            <!-- Life controls here -->
-                         </div>
-                         <div id="don-tracker" class="hidden">
-                            <h3 class="font-bold text-xl mb-2">DON!!</h3>
-                            <!-- DON!! controls here -->
-                         </div>
-                         <button id="final-attack-btn" class="hidden mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-2xl">Final Attack!</button>
-                    </div>
                     
                     <div id="turn-controls" class="mt-4">
                     </div>
@@ -529,12 +497,11 @@ document.addEventListener('DOMContentLoaded', () => {
         winnerAnnounced: false, // Client-side flag
         game: {
             tcg: 'pokemon',
-            status: 'waiting', // waiting, active, paused, finished, overtime, game-over, setting_life
+            status: 'waiting', // waiting, active, paused, finished, overtime, game-over
             prizeCount: 6,
             loreToWin: 20,
             startingLife: 20,
             startingLP: 8000,
-            donTrackerEnabled: false,
             timerType: 'countdown', // countdown, chess
             countdownMinutes: 30,
             chessMinutes: 20,
@@ -545,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
             roundWinnerId: null,
             isTie: false,
             winnerId: null,
-            players: {}, // { [id]: { name, prizesTaken, loreCount, life, lp, don, isHost, color, connected, actionsUsed, lifeSubmitted } }
+            players: {}, // { [id]: { name, prizesTaken, loreCount, life, lp, isHost, color, connected, actionsUsed } }
             turn: null, // player id
             timerState: {
                 running: false,
@@ -569,7 +536,6 @@ let PUSHER_CLUSTER = null;
         gameRoom: document.getElementById('game-room-view'),
         presenter: document.getElementById('presenter-view'),
         chooseFirstPlayerModal: document.getElementById('choose-first-player-modal'),
-        setStartingLifeModal: document.getElementById('set-starting-life-modal'),
         winnerModal: document.getElementById('winner-modal'),
         issueWinModal: document.getElementById('issue-win-modal'),
         zeroLifeModal: document.getElementById('zero-life-modal'),
@@ -596,12 +562,10 @@ let PUSHER_CLUSTER = null;
         color,
         prizesTaken: [],
         loreCount: 0,
-        life: 5, // Default for One Piece, will be updated
+        life: appState.game.startingLife,
         lp: appState.game.startingLP,
-        don: { active: 0, rested: 0 },
         connected: true,
-        actionsUsed: { supporter: false, energy: false, retreat: false, stadium: false },
-        lifeSubmitted: false
+        actionsUsed: { supporter: false, energy: false, retreat: false, stadium: false }
     });
 
 
@@ -676,7 +640,6 @@ let PUSHER_CLUSTER = null;
         document.getElementById('lorcana-controls').classList.add('hidden');
         document.getElementById('mtg-controls').classList.add('hidden');
         document.getElementById('yugioh-controls').classList.add('hidden');
-        document.getElementById('onepiece-controls').classList.add('hidden');
 
         if (game.tcg === 'pokemon') {
             document.getElementById('pokemon-controls').classList.remove('hidden');
@@ -719,15 +682,6 @@ let PUSHER_CLUSTER = null;
             if (p2Id && game.players[p2Id]) {
                 document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].lp})`;
             }
-        } else if (game.tcg === 'onepiece') {
-            document.getElementById('onepiece-controls').classList.remove('hidden');
-            renderOnePieceControls(me);
-            if (p1Id && game.players[p1Id]) {
-                document.getElementById('player1-name-turn').textContent = `${game.players[p1Id].name} (${game.players[p1Id].life} Life)`;
-            }
-            if (p2Id && game.players[p2Id]) {
-                document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].life} Life)`;
-            }
         }
 
         p1Indicator.classList.remove('turn-indicator-glow');
@@ -736,9 +690,7 @@ let PUSHER_CLUSTER = null;
         if (game.turn === p2Id) p2Indicator.classList.add('turn-indicator-glow');
 
         let statusText = "Waiting to start...";
-        if (game.status === 'setting_life') {
-            statusText = "Setting starting life...";
-        } else if (game.status === 'active') {
+        if (game.status === 'active') {
             statusText = "Game in progress!";
             if (game.gameMode === 'bestOfThree') {
                 statusText = `Game ${game.currentGame} of 3`;
@@ -838,50 +790,6 @@ let PUSHER_CLUSTER = null;
             </div>
             <button id="calculator-open-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg"><i class="fas fa-calculator mr-2"></i>Calculator</button>
         `;
-    };
-
-    const renderOnePieceControls = (me) => {
-        const lifeContainer = document.getElementById('onepiece-life-tracker');
-        const donContainer = document.getElementById('don-tracker');
-        const finalAttackBtn = document.getElementById('final-attack-btn');
-        const opponent = Object.values(appState.game.players).find(p => p.name !== me.name);
-
-        lifeContainer.innerHTML = `
-            <h3 class="font-bold text-xl mb-2">Your Life</h3>
-            <div class="flex items-center justify-center space-x-4">
-                <button id="op-life-down-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-down fa-2x"></i></button>
-                <span class="text-5xl font-bold">${me.life}</span>
-                <button id="op-life-up-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-up fa-2x"></i></button>
-            </div>
-        `;
-
-        if (appState.game.donTrackerEnabled) {
-            donContainer.classList.remove('hidden');
-            donContainer.innerHTML = `
-                <h3 class="font-bold text-xl mb-2">DON!!</h3>
-                <div class="flex items-center justify-center space-x-6">
-                    <div>
-                        <p class="font-bold">Active: ${me.don.active}</p>
-                        <div class="flex items-center space-x-2 mt-1">
-                            <button data-don-type="active" data-don-change="-1" class="don-btn bg-red-600 w-8 h-8 rounded">-</button>
-                            <button data-don-type="active" data-don-change="1" class="don-btn bg-green-600 w-8 h-8 rounded">+</button>
-                        </div>
-                    </div>
-                    <button id="rest-don-btn" class="bg-yellow-500 hover:bg-yellow-600 p-2 rounded">Rest 1 DON!!</button>
-                    <div>
-                        <p class="font-bold">Rested: ${me.don.rested}</p>
-                    </div>
-                </div>
-            `;
-        } else {
-            donContainer.classList.add('hidden');
-        }
-
-        if (opponent && opponent.life <= 0) {
-            finalAttackBtn.classList.remove('hidden');
-        } else {
-            finalAttackBtn.classList.add('hidden');
-        }
     };
 
     const renderTimerDisplay = () => {
@@ -1006,7 +914,7 @@ let PUSHER_CLUSTER = null;
             p2Lore.classList.remove('hidden');
             p1Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p1.loreCount} Lore</span>`;
             p2Lore.innerHTML = `${loreIconSVG} <span class="ml-2">${p2.loreCount} Lore</span>`;
-        } else if (game.tcg === 'mtg' || game.tcg === 'onepiece') {
+        } else if (game.tcg === 'mtg') {
             p1Life.classList.remove('hidden');
             p2Life.classList.remove('hidden');
             p1Life.textContent = `${p1.life} Life Remaining`;
@@ -1164,12 +1072,6 @@ let PUSHER_CLUSTER = null;
     };
 
     const fullRender = () => {
-        if (appState.game.status === 'setting_life') {
-            showModal('setStartingLifeModal');
-        } else {
-            hideModal('setStartingLifeModal');
-        }
-
         renderGameRoom();
         renderPresenter();
 
@@ -1475,42 +1377,6 @@ let PUSHER_CLUSTER = null;
         appState.channel.unbind('client-update-action');
         appState.channel.unbind('client-update-life');
         appState.channel.unbind('client-update-lp');
-        appState.channel.unbind('client-submit-life');
-        appState.channel.unbind('client-update-don');
-        appState.channel.unbind('client-final-attack');
-
-        appState.channel.bind('client-submit-life', (data, metadata) => {
-            const playerId = metadata.user_id;
-            if (appState.game.players[playerId]) {
-                appState.game.players[playerId].life = data.life;
-                appState.game.players[playerId].lifeSubmitted = true;
-                
-                const allPlayers = Object.values(appState.game.players);
-                const allSubmitted = allPlayers.length >= 2 && allPlayers.every(p => p.lifeSubmitted);
-
-                if (allSubmitted) {
-                    appState.game.status = 'waiting'; // This tells clients to close the modal
-                    hideModal('setStartingLifeModal');
-                    renderChooseFirstPlayerModal();
-                }
-                broadcastGameState();
-                fullRender();
-            }
-        });
-
-        appState.channel.bind('client-update-don', (data, metadata) => {
-            const playerId = metadata.user_id;
-            if (appState.game.players[playerId]) {
-                appState.game.players[playerId].don = data.don;
-                broadcastGameState();
-                fullRender();
-            }
-        });
-
-        appState.channel.bind('client-final-attack', (data, metadata) => {
-            const winnerId = metadata.user_id;
-            handleGameWin(winnerId);
-        });
 
         appState.channel.bind('client-update-prizes', (data, metadata) => {
             const playerId = metadata.user_id;
@@ -1543,7 +1409,7 @@ let PUSHER_CLUSTER = null;
             const playerId = metadata.user_id;
             if (appState.game.players[playerId]) {
                 appState.game.players[playerId].life = data.life;
-                if (data.life <= 0 && appState.game.tcg === 'mtg') { // Only for MTG
+                if (data.life <= 0) {
                     const player = appState.game.players[playerId];
                     document.getElementById('zero-life-prompt').textContent = `${player.name} is at 0 life. Did they lose the game?`;
                     showModal('zeroLifeModal');
@@ -1581,10 +1447,6 @@ let PUSHER_CLUSTER = null;
             if (appState.game.turn === previousPlayerId) {
                 if (appState.game.players[previousPlayerId]) {
                     appState.game.players[previousPlayerId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
-                     if(appState.game.tcg === 'onepiece' && appState.game.donTrackerEnabled) {
-                        appState.game.players[previousPlayerId].don.active = appState.game.players[previousPlayerId].don.active + appState.game.players[previousPlayerId].don.rested;
-                        appState.game.players[previousPlayerId].don.rested = 0;
-                    }
                 }
                 appState.game.turn = data.turn;
                 broadcastGameState();
@@ -1669,9 +1531,7 @@ let PUSHER_CLUSTER = null;
         Object.values(appState.game.players).forEach(p => {
             p.prizesTaken = [];
             p.loreCount = 0;
-            if (appState.game.tcg !== 'onepiece') { // Keep submitted life for One Piece
-                p.life = appState.game.startingLife;
-            }
+            p.life = appState.game.startingLife;
             p.lp = appState.game.startingLP;
             p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
         });
@@ -1692,10 +1552,6 @@ let PUSHER_CLUSTER = null;
                 });
             }
         } else {
-             // Reset life submission for the next game in the series
-            if (appState.game.tcg === 'onepiece') {
-                Object.values(appState.game.players).forEach(p => p.lifeSubmitted = false);
-            }
             // Just advance to the next game in the match
             appState.game.currentGame++;
         }
@@ -1782,7 +1638,6 @@ let PUSHER_CLUSTER = null;
             '1', '2', '3', '*',
             'C', '0', '='
         ];
-        buttonsContainer.innerHTML = ''; // Clear previous buttons
         buttonLayout.forEach(val => {
             const btn = document.createElement('button');
             btn.textContent = val;
@@ -1833,7 +1688,6 @@ let PUSHER_CLUSTER = null;
         document.getElementById('lorcana-lore-settings').style.display = tcg === 'lorcana' ? 'block' : 'none';
         document.getElementById('mtg-life-settings').style.display = tcg === 'mtg' ? 'block' : 'none';
         document.getElementById('yugioh-lp-settings').style.display = tcg === 'yugioh' ? 'block' : 'none';
-        document.getElementById('onepiece-settings').style.display = tcg === 'onepiece' ? 'block' : 'none';
 
         const isCountdown = appState.game.timerType === 'countdown';
         document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
@@ -1846,7 +1700,6 @@ let PUSHER_CLUSTER = null;
     document.getElementById('select-lorcana').addEventListener('click', () => setupGameSettings('lorcana'));
     document.getElementById('select-mtg').addEventListener('click', () => setupGameSettings('mtg'));
     document.getElementById('select-yugioh').addEventListener('click', () => setupGameSettings('yugioh'));
-    document.getElementById('select-onepiece').addEventListener('click', () => setupGameSettings('onepiece'));
 
     document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
@@ -1857,11 +1710,6 @@ let PUSHER_CLUSTER = null;
         document.querySelectorAll('.tracking-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
         btn.classList.replace('bg-gray-600', 'bg-blue-600');
         appState.game.additionalTrackingEnabled = btn.dataset.tracking === 'true';
-    }));
-    document.querySelectorAll('.don-option-btn').forEach(btn => btn.addEventListener('click', () => {
-        document.querySelectorAll('.don-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
-        btn.classList.replace('bg-gray-600', 'bg-blue-600');
-        appState.game.donTrackerEnabled = btn.dataset.don === 'true';
     }));
     document.querySelectorAll('.timer-type-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.timer-type-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
@@ -1956,13 +1804,7 @@ let PUSHER_CLUSTER = null;
                 console.error("Cannot start, waiting for a guest to join.");
                 return;
             }
-            if (appState.game.tcg === 'onepiece') {
-                appState.game.status = 'setting_life';
-                broadcastGameState();
-                showModal('setStartingLifeModal');
-            } else {
-                renderChooseFirstPlayerModal();
-            }
+            renderChooseFirstPlayerModal();
         } else if (targetId === 'restart-round-btn') {
             restartRound();
         } else if (targetId === 'issue-win-btn') {
@@ -2001,7 +1843,7 @@ let PUSHER_CLUSTER = null;
             const firstPlayerId = e.target.dataset.playerId;
             if (firstPlayerId) {
                 hideModal('chooseFirstPlayerModal');
-                const isFirstGame = appState.game.status === 'waiting' || appState.game.status === 'setting_life';
+                const isFirstGame = appState.game.status === 'waiting';
                 startGameWithFirstPlayer(firstPlayerId, isFirstGame);
             }
         }
@@ -2030,13 +1872,7 @@ let PUSHER_CLUSTER = null;
 
     const startNextGame = () => {
         hideModal('winnerModal');
-        if (appState.game.tcg === 'onepiece') {
-            appState.game.status = 'setting_life';
-            broadcastGameState();
-            showModal('setStartingLifeModal');
-        } else {
-            renderChooseFirstPlayerModal();
-        }
+        renderChooseFirstPlayerModal();
     };
 
     const restartRound = () => {
@@ -2045,9 +1881,7 @@ let PUSHER_CLUSTER = null;
             p.loreCount = 0;
             p.life = appState.game.startingLife;
             p.lp = appState.game.startingLP;
-            p.don = { active: 0, rested: 0 };
             p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
-            p.lifeSubmitted = false;
         });
         appState.game.status = 'waiting';
         appState.game.timerState = { running: false, startTime: null, elapsed: 0, playerTimes: {} };
@@ -2100,11 +1934,11 @@ let PUSHER_CLUSTER = null;
         let lifeChanged = false;
         let newLife = myPlayer.life;
 
-        if (e.target.closest('#life-up-btn') || e.target.closest('#op-life-up-btn')) {
+        if (e.target.closest('#life-up-btn')) {
             newLife++;
             lifeChanged = true;
         }
-        if (e.target.closest('#life-down-btn') || e.target.closest('#op-life-down-btn')) {
+        if (e.target.closest('#life-down-btn')) {
             newLife--;
             lifeChanged = true;
         }
@@ -2113,7 +1947,7 @@ let PUSHER_CLUSTER = null;
             if (newLife < 0) newLife = 0; // Prevent life from going below 0
             myPlayer.life = newLife;
             if (appState.isHost) {
-                if(appState.game.tcg === 'mtg' && newLife <= 0) {
+                if(newLife <= 0) {
                     document.getElementById('zero-life-prompt').textContent = `${myPlayer.name} is at 0 life. Did they lose the game?`;
                     showModal('zeroLifeModal');
                 }
@@ -2156,9 +1990,6 @@ let PUSHER_CLUSTER = null;
             if (appState.isHost) {
                 if (appState.game.players[myId]) {
                     appState.game.players[myId].actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
-                    if(appState.game.tcg === 'onepiece' && appState.game.donTrackerEnabled) {
-                        appState.game.players[myId].don = { active: 0, rested: 0 };
-                    }
                 }
                 appState.game.turn = otherPlayerId;
                 broadcastGameState();
@@ -2176,74 +2007,6 @@ let PUSHER_CLUSTER = null;
         }
         if (document.getElementById('game-menu-dropdown') && !document.getElementById('game-menu-btn').contains(e.target) && !document.getElementById('game-menu-dropdown').contains(e.target)) {
             document.getElementById('game-menu-dropdown').classList.add('hidden');
-        }
-    });
-    document.getElementById('submit-starting-life-btn').addEventListener('click', () => {
-        const lifeInput = document.getElementById('player-starting-life-input');
-        const life = parseInt(lifeInput.value, 10) || 5;
-        
-        document.getElementById('submit-starting-life-btn').style.display = 'none';
-        document.getElementById('waiting-for-life-submission').classList.remove('hidden');
-
-        if (appState.isHost) {
-            appState.game.players[appState.myId].life = life;
-            appState.game.players[appState.myId].lifeSubmitted = true;
-            
-            const allPlayers = Object.values(appState.game.players);
-            const allSubmitted = allPlayers.length >= 2 && allPlayers.every(p => p.lifeSubmitted);
-
-            if (allSubmitted) {
-                appState.game.status = 'waiting'; // Change status to hide modal for all
-                hideModal('setStartingLifeModal');
-                renderChooseFirstPlayerModal();
-            }
-            broadcastGameState();
-        } else {
-            appState.channel.trigger('client-submit-life', { life });
-        }
-    });
-    document.getElementById('onepiece-controls').addEventListener('click', (e) => {
-        const myPlayer = appState.game.players[appState.myId];
-        if (!myPlayer) return;
-
-        // Final Attack Button
-        if (e.target.closest('#final-attack-btn')) {
-            if (appState.isHost) {
-                handleGameWin(appState.myId);
-            } else {
-                appState.channel.trigger('client-final-attack', {});
-            }
-            return;
-        }
-
-        // DON!! Buttons
-        const donBtn = e.target.closest('.don-btn');
-        if (donBtn) {
-            const change = parseInt(donBtn.dataset.donChange, 10);
-            let newActiveDon = myPlayer.don.active + change;
-            if (newActiveDon < 0) newActiveDon = 0;
-            
-            if (appState.isHost) {
-                myPlayer.don.active = newActiveDon;
-                broadcastGameState();
-                fullRender();
-            } else {
-                appState.channel.trigger('client-update-don', { don: { ...myPlayer.don, active: newActiveDon } });
-            }
-        }
-
-        // Rest DON!! Button
-        if (e.target.closest('#rest-don-btn')) {
-            if (myPlayer.don.active > 0) {
-                const newDon = { active: myPlayer.don.active - 1, rested: myPlayer.don.rested + 1 };
-                if (appState.isHost) {
-                    myPlayer.don = newDon;
-                    broadcastGameState();
-                    fullRender();
-                } else {
-                    appState.channel.trigger('client-update-don', { don: newDon });
-                }
-            }
         }
     });
     const fullscreenBtn = document.getElementById('fullscreen-btn');
