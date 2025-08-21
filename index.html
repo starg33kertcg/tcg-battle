@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
         winnerAnnounced: false, // Client-side flag
         game: {
             tcg: 'pokemon',
-            status: 'waiting', // waiting, active, paused, finished, overtime, game-over
+            status: 'waiting', // waiting, active, paused, finished, overtime, game-over, setting_life
             prizeCount: 6,
             loreToWin: 20,
             startingLife: 20,
@@ -1623,7 +1623,9 @@ let PUSHER_CLUSTER = null;
         Object.values(appState.game.players).forEach(p => {
             p.prizesTaken = [];
             p.loreCount = 0;
-            p.life = appState.game.startingLife;
+            if (appState.game.tcg !== 'onepiece') { // Keep submitted life for One Piece
+                p.life = appState.game.startingLife;
+            }
             p.lp = appState.game.startingLP;
             p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
         });
@@ -1948,7 +1950,7 @@ let PUSHER_CLUSTER = null;
             const firstPlayerId = e.target.dataset.playerId;
             if (firstPlayerId) {
                 hideModal('chooseFirstPlayerModal');
-                const isFirstGame = appState.game.status === 'waiting';
+                const isFirstGame = appState.game.status === 'waiting' || appState.game.status === 'setting_life';
                 startGameWithFirstPlayer(firstPlayerId, isFirstGame);
             }
         }
