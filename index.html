@@ -1164,7 +1164,7 @@ let PUSHER_CLUSTER = null;
     };
 
     const fullRender = () => {
-        if (appState.game.status === 'setting_life' && !views.setStartingLifeModal.classList.contains('hidden')) {
+        if (appState.game.status === 'setting_life') {
             showModal('setStartingLifeModal');
         }
 
