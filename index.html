@@ -78,13 +78,13 @@
         }
         /* DBZ Awaken Badge */
         .fiery-glow {
-        color: #fef08a; /* A nice golden yellow */
+        color: #fef08a; /* Bright yellow text color */
         animation: pulse-fire 1.5s infinite;
         }
         @keyframes pulse-fire {
-            0% { text-shadow: 0 0 5px #fef08a, 0 0 10px #fef08a, 0 0 15px #f59e0b, 0 0 20px #f59e0b; }
-            50% { text-shadow: 0 0 10px #fef08a, 0 0 15px #fcd34d, 0 0 25px #f59e0b, 0 0 35px #d97706; }
-            100% { text-shadow: 0 0 5px #fef08a, 0 0 10px #fef08a, 0 0 15px #f59e0b, 0 0 20px #f59e0b; }
+            0% { text-shadow: 0 0 5px #fef08a, 0 0 10px #f59e0b, 0 0 15px #d97706; }
+            50% { text-shadow: 0 0 10px #fef08a, 0 0 20px #f59e0b, 0 0 30px #d97706; }
+            100% { text-shadow: 0 0 5px #fef08a, 0 0 10px #f59e0b, 0 0 15px #d97706; }
         }
 
         /* Lorcana Styles */
@@ -516,7 +516,7 @@
             <span id="dbz-life-display" class="text-6xl font-bold">8</span>
             <button id="dbz-life-up-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-up fa-3x"></i></button>
         </div>
-        <button id="awaken-btn" class="mt-4 w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-colors">
+        <button id="awaken-btn" class="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-colors">
             AWAKEN
         </button>
     </div>
@@ -534,7 +534,7 @@
                 <button id="dbz-energy-remove-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 rounded p-2 font-bold">-</button>
             </div>
             <button id="dbz-energy-rest-btn" class="bg-yellow-600 hover:bg-yellow-700 rounded p-2 font-bold">Rest</button>
-            <button id="dbz-energy-reset-btn" class="col-span-2 bg-red-600 hover:bg-red-700 rounded p-2 font-bold mt-2">Reset</button>
+            <button id="dbz-energy-reset-btn" class="col-span-2 bg-gray-600 hover:bg-gray-500 rounded p-2 font-bold mt-2">Reset</button>
         </div>
     </div>
 </div>
@@ -980,10 +980,13 @@ let PUSHER_CLUSTER = null;
 
     // Update Awaken button appearance
     const awakenBtn = document.getElementById('awaken-btn');
-    awakenBtn.classList.toggle('bg-yellow-500', me.isAwakened);
-    awakenBtn.classList.toggle('hover:bg-yellow-600', me.isAwakened);
-    awakenBtn.classList.toggle('bg-gray-600', !me.isAwakened);
-    awakenBtn.classList.toggle('hover:bg-gray-500', !me.isAwakened);
+if (me.isAwakened) {
+    awakenBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+    awakenBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+} else {
+    awakenBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+    awakenBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+}
 
     // Show/Hide and update Energy tracker
     const energyTracker = document.getElementById('energy-tracker');
@@ -2658,6 +2661,7 @@ const init = async () => {
 
 </body>
 </html>
+
 
 
 
