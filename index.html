@@ -76,6 +76,16 @@
         .winner-animation {
             animation: winner-pop 0.5s ease-out forwards;
         }
+        /* DBZ Awaken Badge */
+        .fiery-glow {
+        color: #fef08a; /* A nice golden yellow */
+        animation: pulse-fire 1.5s infinite;
+        }
+        @keyframes pulse-fire {
+            0% { text-shadow: 0 0 5px #fef08a, 0 0 10px #fef08a, 0 0 15px #f59e0b, 0 0 20px #f59e0b; }
+            50% { text-shadow: 0 0 10px #fef08a, 0 0 15px #fcd34d, 0 0 25px #f59e0b, 0 0 35px #d97706; }
+            100% { text-shadow: 0 0 5px #fef08a, 0 0 10px #fef08a, 0 0 15px #f59e0b, 0 0 20px #f59e0b; }
+        }
 
         /* Lorcana Styles */
         .lore-icon-glow {
@@ -225,9 +235,16 @@
                     </svg>
                     <h3 class="font-bold text-lg">One Piece</h3>
                 </div>
-                 <div class="bg-gray-700 p-4 rounded-lg text-center disabled-card relative flex flex-col justify-center items-center">
-                    <h3 class="font-bold text-lg text-gray-400">Dragonball Z</h3>
-                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 px-2 py-1 rounded text-sm">In Development</span>
+                 <div id="select-dbz" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-orange-500 hover:bg-gray-600 transition-colors">
+                    <div class="h-24 w-24 mx-auto mb-2 rounded-full flex items-center justify-center" style="background-color: #f97316;">
+                    <svg class="w-16 h-16 text-red-600" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="50,5 61,39 98,39 68,62 79,96 50,74 21,96 32,62 2,39 39,39" />
+                    <polygon transform="rotate(72 50 50)" points="50,5 61,39 98,39 68,62 79,96 50,74 21,96 32,62 2,39 39,39" />
+                    <polygon transform="rotate(144 50 50)" points="50,5 61,39 98,39 68,62 79,96 50,74 21,96 32,62 2,39 39,39" />
+                    <polygon transform="rotate(216 50 50)" points="50,5 61,39 98,39 68,62 79,96 50,74 21,96 32,62 2,39 39,39" />
+                </svg>
+                </div>
+                <h3 class="font-bold text-lg">Dragonball Z</h3>
                 </div>
             </div>
              <button id="back-to-home-from-tcg" class="mt-8 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Back</button>
@@ -263,6 +280,13 @@
                     <div class="flex space-x-2 mt-1">
                         <button data-don-tracking="false" class="don-tracking-btn flex-1 bg-blue-600 text-white rounded p-2">Disable</button>
                         <button data-don-tracking="true" class="don-tracking-btn flex-1 bg-gray-600 text-white rounded p-2">Enable</button>
+                        </div>
+                    </div>
+                    <div id="dbz-settings" class="hidden">
+                    <label class="font-bold">Track Energy</label>
+                        <div class="flex space-x-2 mt-1">
+                        <button data-energy-tracking="true" class="energy-tracking-btn flex-1 bg-blue-600 text-white rounded p-2">Enable</button>
+                        <button data-energy-tracking="false" class="energy-tracking-btn flex-1 bg-gray-600 text-white rounded p-2">Disable</button>
                         </div>
                     </div>
                     <div id="lorcana-lore-settings" class="hidden">
@@ -483,6 +507,36 @@
                     </div>
                 </div>
             </div>
+                    <div id="dbz-controls" class="hidden">
+    <div class="mb-4">
+        <h3 class="font-bold text-xl mb-2">Leader Life</h3>
+        <div id="dbz-life-tracker" class="flex justify-center items-center space-x-6">
+            <button id="dbz-life-down-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-down fa-3x"></i></button>
+            <span id="dbz-life-display" class="text-6xl font-bold">8</span>
+            <button id="dbz-life-up-btn" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-arrow-up fa-3x"></i></button>
+        </div>
+        <button id="awaken-btn" class="mt-4 w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg text-xl shadow-lg transition-colors">
+            AWAKEN
+        </button>
+    </div>
+
+    <div id="energy-tracker" class="hidden mt-6 p-4 bg-gray-800 rounded-lg">
+        <h3 class="font-bold text-xl mb-2">Energy Area</h3>
+        <div class="text-2xl font-mono mb-3">
+            Active: <span id="dbz-energy-active-display" class="text-green-400">0</span> / 
+            Total: <span id="dbz-energy-total-display">0</span> | 
+            Rested: <span id="dbz-energy-rested-display" class="text-yellow-400">0</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+            <div class="flex space-x-2">
+                <button id="dbz-energy-add-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 rounded p-2 font-bold">+</button>
+                <button id="dbz-energy-remove-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 rounded p-2 font-bold">-</button>
+            </div>
+            <button id="dbz-energy-rest-btn" class="bg-yellow-600 hover:bg-yellow-700 rounded p-2 font-bold">Rest</button>
+            <button id="dbz-energy-reset-btn" class="col-span-2 bg-red-600 hover:bg-red-700 rounded p-2 font-bold mt-2">Reset</button>
+        </div>
+    </div>
+</div>
                     
                     <div id="turn-controls" class="mt-4">
                     </div>
@@ -502,6 +556,8 @@
                         <div id="presenter-p1-life" class="text-3xl font-bold mt-2 hidden"></div>
                         <div id="presenter-p1-lp" class="text-3xl font-bold mt-2 hidden"></div>
                         <div id="presenter-p1-op-life" class="text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p1-dbz-stats" class="text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p1-awaken-badge" class="hidden mt-2 text-2xl font-bold tracking-widest">AWAKENED</div>
                     </div>
                     
                     <div class="flex-shrink-0 mx-8">
@@ -518,6 +574,8 @@
                         <div id="presenter-p2-life" class="text-3xl font-bold mt-2 hidden"></div>
                         <div id="presenter-p2-lp" class="text-3xl font-bold mt-2 hidden"></div>
                         <div id="presenter-p2-op-life" class="text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p2-dbz-stats" class="text-3xl font-bold mt-2 hidden"></div>
+                        <div id="presenter-p2-awaken-badge" class="hidden mt-2 text-2xl font-bold tracking-widest">AWAKENED</div>
                     </div>
                 </div>
 
@@ -555,29 +613,30 @@ document.addEventListener('DOMContentLoaded', () => {
     winnerAnnounced: false, // Client-side flag
     game: {
         tcg: 'pokemon',
-        status: 'waiting', // waiting, setting_life, active, paused, finished, overtime, game-over
-        prizeCount: 6,
-        loreToWin: 20,
-        startingLife: 20,
-        startingLP: 8000,
-        donTrackingEnabled: false, // ADDITION for One Piece
-        timerType: 'countdown', // countdown, chess
-        countdownMinutes: 30,
-        chessMinutes: 20,
-        gameMode: 'basic', // basic, bestOfThree
-        additionalTrackingEnabled: false,
-        currentGame: 1,
-        wins: {}, // { [playerId]: winCount }
-        roundWinnerId: null,
-        isTie: false,
-        winnerId: null,
-        players: {}, // { [id]: { name, prizesTaken, ..., opLife, don, etc. } }
-        turn: null, // player id
-        timerState: {
-            running: false,
-            startTime: null,
-            elapsed: 0,
-            playerTimes: {} // { [id]: timeInMillis }
+    status: 'waiting', // waiting, setting_life, active, paused, finished, overtime, game-over
+    prizeCount: 6,
+    loreToWin: 20,
+    startingLife: 20,
+    startingLP: 8000,
+    donTrackingEnabled: false,
+    dbzEnergyTrackingEnabled: true,
+    timerType: 'countdown',
+    countdownMinutes: 30,
+    chessMinutes: 20,
+    gameMode: 'basic',
+    additionalTrackingEnabled: false,
+    currentGame: 1,
+    wins: {},
+    roundWinnerId: null,
+    isTie: false,
+    winnerId: null,
+    players: {},
+    turn: null,
+    timerState: {
+        running: false,
+        startTime: null,
+        elapsed: 0,
+        playerTimes: {}
         }
     },
 };
@@ -624,10 +683,13 @@ let PUSHER_CLUSTER = null;
     loreCount: 0,
     life: appState.game.startingLife,
     lp: appState.game.startingLP,
-    opLife: 0,        // ADDITION for One Piece
-    opMaxLife: 0,     // ADDITION for One Piece
-    don: { active: 0, rested: 0 }, // ADDITION for One Piece
-    leaderLifeSet: false, // ADDITION for One Piece
+    opLife: 0,
+    opMaxLife: 0,
+    don: { active: 0, rested: 0 },
+    leaderLifeSet: false,
+    dbzLife: 8,                      
+    isAwakened: false,                
+    dbzEnergy: { active: 0, rested: 0 }, 
     connected: true,
     actionsUsed: { supporter: false, energy: false, retreat: false, stadium: false }
 });
@@ -703,7 +765,8 @@ let PUSHER_CLUSTER = null;
     document.getElementById('lorcana-controls').classList.add('hidden');
     document.getElementById('mtg-controls').classList.add('hidden');
     document.getElementById('yugioh-controls').classList.add('hidden');
-    document.getElementById('one-piece-controls').classList.add('hidden'); // ADDITION
+    document.getElementById('one-piece-controls').classList.add('hidden');
+    document.getElementById('dbz-controls').classList.add('hidden');
 
     if (game.tcg === 'pokemon') {
         document.getElementById('pokemon-controls').classList.remove('hidden');
@@ -746,7 +809,7 @@ let PUSHER_CLUSTER = null;
         if (p2Id && game.players[p2Id]) {
             document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].lp})`;
         }
-    } else if (game.tcg === 'onepiece') { // --- ADDITION START ---
+    } else if (game.tcg === 'onepiece') { 
         document.getElementById('one-piece-controls').classList.remove('hidden');
         renderOnePieceControls(me);
         if (p1Id && game.players[p1Id]) {
@@ -755,7 +818,19 @@ let PUSHER_CLUSTER = null;
         if (p2Id && game.players[p2Id]) {
             document.getElementById('player2-name-turn').textContent = `${game.players[p2Id].name} (${game.players[p2Id].opLife} Life)`;
         }
-    } // --- ADDITION END ---
+    } else if (game.tcg === 'dbz') {
+        document.getElementById('dbz-controls').classList.remove('hidden');
+        renderDbzControls(me);
+        const p1 = game.players[p1Id];
+        const p2 = game.players[p2Id];
+        if (p1) {
+            document.getElementById('player1-name-turn').textContent = `${p1.name} (${p1.dbzLife} Life)${p1.isAwakened ? ' ✨' : ''}`;
+        }
+        if (p2) {
+            document.getElementById('player2-name-turn').textContent = `${p2.name} (${p2.dbzLife} Life)${p2.isAwakened ? ' ✨' : ''}`;
+        }
+    }
+        
 
     p1Indicator.classList.remove('turn-indicator-glow');
     p2Indicator.classList.remove('turn-indicator-glow');
@@ -898,6 +973,35 @@ let PUSHER_CLUSTER = null;
         donTracker.classList.add('hidden');
     }
 };
+    const renderDbzControls = (me) => {
+    // Update Life display
+    document.getElementById('dbz-life-display').textContent = me.dbzLife;
+
+    // Update Awaken button appearance and disable status
+    const awakenBtn = document.getElementById('awaken-btn');
+    awakenBtn.classList.toggle('bg-yellow-500', me.isAwakened);
+    awakenBtn.classList.toggle('hover:bg-yellow-600', me.isAwakened);
+    awakenBtn.classList.toggle('bg-gray-600', !me.isAwakened);
+    awakenBtn.classList.toggle('hover:bg-gray-500', !me.isAwakened);
+
+    // Show/Hide and update Energy tracker
+    const energyTracker = document.getElementById('energy-tracker');
+    if (appState.game.dbzEnergyTrackingEnabled) {
+        energyTracker.classList.remove('hidden');
+        const totalEnergy = me.dbzEnergy.active + me.dbzEnergy.rested;
+        document.getElementById('dbz-energy-active-display').textContent = me.dbzEnergy.active;
+        document.getElementById('dbz-energy-rested-display').textContent = me.dbzEnergy.rested;
+        document.getElementById('dbz-energy-total-display').textContent = totalEnergy;
+    } else {
+        energyTracker.classList.add('hidden');
+    }
+
+    // Disable all controls if it's not our turn
+    const isMyTurn = appState.myId === appState.game.turn;
+    document.getElementById('dbz-controls').querySelectorAll('button').forEach(btn => {
+        btn.disabled = !isMyTurn || appState.game.status !== 'active';
+    });
+};
 
     const renderTimerDisplay = () => {
         const timerDisplay = document.getElementById('timer-display-controls');
@@ -963,8 +1067,8 @@ let PUSHER_CLUSTER = null;
     const p1Id = Object.keys(game.players).find(id => game.players[id].isHost);
     const p2Id = Object.keys(game.players).find(id => !game.players[id].isHost);
     
-    const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, life: 20, lp: 8000, opLife: 0, color: '#cccccc', actionsUsed: {} };
-    const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, life: 20, lp: 8000, opLife: 0, color: '#cccccc', actionsUsed: {} };
+    const p1 = p1Id ? game.players[p1Id] : { name: 'Host', prizesTaken: [], loreCount: 0, life: 20, lp: 8000, opLife: 0, dbzLife: 8, isAwakened: false, color: '#cccccc', actionsUsed: {} };
+    const p2 = p2Id ? game.players[p2Id] : { name: 'Guest', prizesTaken: [], loreCount: 0, life: 20, lp: 8000, opLife: 0, dbzLife: 8, isAwakened: false, color: '#cccccc', actionsUsed: {} };
 
     document.getElementById('presenter-p1-name').textContent = p1.name;
     document.getElementById('presenter-p2-name').textContent = p2.name;
@@ -996,8 +1100,12 @@ let PUSHER_CLUSTER = null;
     const p2Life = document.getElementById('presenter-p2-life');
     const p1Lp = document.getElementById('presenter-p1-lp');
     const p2Lp = document.getElementById('presenter-p2-lp');
-    const p1OpLife = document.getElementById('presenter-p1-op-life'); // ADDITION
-    const p2OpLife = document.getElementById('presenter-p2-op-life'); // ADDITION
+    const p1OpLife = document.getElementById('presenter-p1-op-life');
+    const p2OpLife = document.getElementById('presenter-p2-op-life');
+    const p1DbzStats = document.getElementById('presenter-p1-dbz-stats');
+    const p2DbzStats = document.getElementById('presenter-p2-dbz-stats');
+    const p1AwakenBadge = document.getElementById('presenter-p1-awaken-badge');
+    const p2AwakenBadge = document.getElementById('presenter-p2-awaken-badge');
     
     // Hide all game-specific displays initially
     document.getElementById('presenter-p1-prizes').classList.add('hidden');
@@ -1010,8 +1118,12 @@ let PUSHER_CLUSTER = null;
     p2Life.classList.add('hidden');
     p1Lp.classList.add('hidden');
     p2Lp.classList.add('hidden');
-    p1OpLife.classList.add('hidden'); // ADDITION
-    p2OpLife.classList.add('hidden'); // ADDITION
+    p1OpLife.classList.add('hidden'); 
+    p2OpLife.classList.add('hidden'); 
+    p1DbzStats.classList.add('hidden');   
+    p2DbzStats.classList.add('hidden');   
+    p1AwakenBadge.classList.add('hidden'); 
+    p2AwakenBadge.classList.add('hidden');  
 
     if (game.tcg === 'pokemon') {
         document.getElementById('presenter-p1-prizes').classList.remove('hidden');
@@ -1035,12 +1147,29 @@ let PUSHER_CLUSTER = null;
         p2Lp.classList.remove('hidden');
         p1Lp.textContent = `${p1.lp} Life Points`;
         p2Lp.textContent = `${p2.lp} Life Points`;
-    } else if (game.tcg === 'onepiece') { // --- ADDITION START ---
+    } else if (game.tcg === 'onepiece') { 
         p1OpLife.classList.remove('hidden');
         p2OpLife.classList.remove('hidden');
         p1OpLife.textContent = `${p1.opLife} Life`;
         p2OpLife.textContent = `${p2.opLife} Life`;
-    } // --- ADDITION END ---
+    } else if (game.tcg === 'dbz') { 
+        p1DbzStats.classList.remove('hidden');
+        p2DbzStats.classList.remove('hidden');
+        const p1EnergyTotal = p1.dbzEnergy ? (p1.dbzEnergy.active + p1.dbzEnergy.rested) : 0;
+        const p2EnergyTotal = p2.dbzEnergy ? (p2.dbzEnergy.active + p2.dbzEnergy.rested) : 0;
+        
+        p1DbzStats.textContent = `${p1.dbzLife} Life | ${p1EnergyTotal} Energy`;
+        p2DbzStats.textContent = `${p2.dbzLife} Life | ${p2EnergyTotal} Energy`;
+
+        if (p1.isAwakened) {
+            p1AwakenBadge.classList.remove('hidden');
+            p1AwakenBadge.classList.add('fiery-glow');
+        }
+        if (p2.isAwakened) {
+            p2AwakenBadge.classList.remove('hidden');
+            p2AwakenBadge.classList.add('fiery-glow');
+        }
+    } 
 
 
     const countdownTimerEl = document.getElementById('presenter-timer');
@@ -1500,10 +1629,39 @@ let PUSHER_CLUSTER = null;
     appState.channel.unbind('client-update-action');
     appState.channel.unbind('client-update-life');
     appState.channel.unbind('client-update-lp');
-    appState.channel.unbind('client-submit-leader-life'); // ADDITION
-    appState.channel.unbind('client-update-op-life');     // ADDITION
-    appState.channel.unbind('client-update-don');         // ADDITION
-    appState.channel.unbind('client-final-attack');       // ADDITION
+    appState.channel.unbind('client-submit-leader-life'); 
+    appState.channel.unbind('client-update-op-life');    
+    appState.channel.unbind('client-update-don');         
+    appState.channel.unbind('client-final-attack');
+    appState.channel.bind('client-update-dbz-life', (data, metadata) => {
+        const playerId = metadata.user_id;
+        if (appState.game.players[playerId]) {
+            appState.game.players[playerId].dbzLife = data.life;
+            if (data.life <= 0) {
+                const opponentId = Object.keys(appState.game.players).find(id => id !== playerId);
+                handleGameWin(opponentId);
+            } else {
+                broadcastGameState();
+                fullRender();
+            }
+        }
+    });
+    appState.channel.bind('client-toggle-awaken', (data, metadata) => {
+        const playerId = metadata.user_id;
+        if (appState.game.players[playerId]) {
+            appState.game.players[playerId].isAwakened = data.isAwakened;
+            broadcastGameState();
+            fullRender();
+        }
+    });
+    appState.channel.bind('client-update-dbz-energy', (data, metadata) => {
+        const playerId = metadata.user_id;
+        if (appState.game.players[playerId]) {
+            appState.game.players[playerId].dbzEnergy = data.energy;
+            broadcastGameState();
+            fullRender();
+        }
+    });
 
     appState.channel.bind('client-submit-leader-life', (data, metadata) => {
         const playerId = metadata.user_id;
@@ -1616,18 +1774,18 @@ let PUSHER_CLUSTER = null;
             if (appState.game.players[previousPlayerId]) {
                 const player = appState.game.players[previousPlayerId];
                 player.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
-                if (appState.game.tcg === 'onepiece') { // ADDITION
+                if (appState.game.tcg === 'onepiece') {
                     player.don = { active: 0, rested: 0 };
+                }
+                if (appState.game.tcg === 'dbz') {
+                    player.dbzEnergy.active += player.dbzEnergy.rested;
+                    player.dbzEnergy.rested = 0;
                 }
             }
             appState.game.turn = data.turn;
             broadcastGameState();
             fullRender();
         }
-    });
-
-    appState.channel.bind('client-scoop-game', (data, metadata) => {
-        handleScoop(metadata.user_id);
     });
 
     console.log("Host events have been successfully bound.");
@@ -1706,14 +1864,14 @@ let PUSHER_CLUSTER = null;
         p.life = appState.game.startingLife;
         p.lp = appState.game.startingLP;
         p.actionsUsed = { supporter: false, energy: false, retreat: false, stadium: false };
-        // --- ADDITION START ---
         p.don = { active: 0, rested: 0 };
-        p.leaderLifeSet = true; // Mark as set for subsequent games
+        p.leaderLifeSet = true;
         if (appState.game.tcg === 'onepiece' && appState.game.gameMode === 'bestOfThree' && !isFirstGame) {
-            // For Bo3 games 2 & 3, restore life from max, don't reset
             p.opLife = p.opMaxLife;
         }
-        // --- ADDITION END ---
+        p.dbzLife = 8;
+        p.isAwakened = false;
+        p.dbzEnergy = { active: 0, rested: 0 };
     });
 
     if (isFirstGame) {
@@ -1868,7 +2026,8 @@ let PUSHER_CLUSTER = null;
     document.getElementById('lorcana-lore-settings').style.display = tcg === 'lorcana' ? 'block' : 'none';
     document.getElementById('mtg-life-settings').style.display = tcg === 'mtg' ? 'block' : 'none';
     document.getElementById('yugioh-lp-settings').style.display = tcg === 'yugioh' ? 'block' : 'none';
-    document.getElementById('one-piece-settings').style.display = tcg === 'onepiece' ? 'block' : 'none'; // ADDITION
+    document.getElementById('one-piece-settings').style.display = tcg === 'onepiece' ? 'block' : 'none';
+    document.getElementById('dbz-settings').style.display = tcg === 'dbz' ? 'block' : 'none';
 
     const isCountdown = appState.game.timerType === 'countdown';
     document.getElementById('countdown-timer-settings').style.display = isCountdown ? 'block' : 'none';
@@ -1881,7 +2040,8 @@ let PUSHER_CLUSTER = null;
     document.getElementById('select-lorcana').addEventListener('click', () => setupGameSettings('lorcana'));
     document.getElementById('select-mtg').addEventListener('click', () => setupGameSettings('mtg'));
     document.getElementById('select-yugioh').addEventListener('click', () => setupGameSettings('yugioh'));
-    document.getElementById('select-onepiece').addEventListener('click', () => setupGameSettings('onepiece')); // ADDITION
+    document.getElementById('select-onepiece').addEventListener('click', () => setupGameSettings('onepiece'));
+    document.getElementById('select-dbz').addEventListener('click', () => setupGameSettings('dbz'));
 
     document.querySelectorAll('.prize-option-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.prize-option-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
@@ -1897,6 +2057,11 @@ let PUSHER_CLUSTER = null;
     document.querySelectorAll('.don-tracking-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
     btn.classList.replace('bg-gray-600', 'bg-blue-600');
     appState.game.donTrackingEnabled = btn.dataset.donTracking === 'true';
+}));
+    document.querySelectorAll('.energy-tracking-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.energy-tracking-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
+    btn.classList.replace('bg-gray-600', 'bg-blue-600');
+    appState.game.dbzEnergyTrackingEnabled = btn.dataset.energyTracking === 'true';
 }));
     document.querySelectorAll('.timer-type-btn').forEach(btn => btn.addEventListener('click', () => {
         document.querySelectorAll('.timer-type-btn').forEach(b => b.classList.replace('bg-blue-600', 'bg-gray-600'));
@@ -2085,6 +2250,9 @@ let PUSHER_CLUSTER = null;
         p.opMaxLife = 0;
         p.don = { active: 0, rested: 0 };
         p.leaderLifeSet = false;
+        p.dbzLife = 8;
+        p.isAwakened = false;
+        p.dbzEnergy = { active: 0, rested: 0 };
     });
     
     // Reset all game-wide data
@@ -2349,6 +2517,68 @@ document.getElementById('one-piece-controls').addEventListener('click', (e) => {
         }
     }
 });
+    document.getElementById('dbz-controls').addEventListener('click', (e) => {
+    const me = appState.game.players[appState.myId];
+    if (!me) return;
+
+    let lifeChanged = false;
+    let newLife = me.dbzLife;
+    if (e.target.closest('#dbz-life-up-btn')) { newLife++; lifeChanged = true; }
+    if (e.target.closest('#dbz-life-down-btn')) { newLife--; lifeChanged = true; }
+
+    if (lifeChanged) {
+        if (newLife < 0) newLife = 0;
+        if (appState.isHost) {
+            me.dbzLife = newLife;
+            if (newLife <= 0) {
+                const opponentId = Object.keys(appState.game.players).find(id => id !== appState.myId);
+                handleGameWin(opponentId);
+            } else {
+                broadcastGameState();
+                fullRender();
+            }
+        } else {
+            appState.channel.trigger('client-update-dbz-life', { life: newLife });
+        }
+        return;
+    }
+
+    if (e.target.closest('#awaken-btn')) {
+        const newAwakenState = !me.isAwakened;
+        if (appState.isHost) {
+            me.isAwakened = newAwakenState;
+            broadcastGameState();
+            fullRender();
+        } else {
+            appState.channel.trigger('client-toggle-awaken', { isAwakened: newAwakenState });
+        }
+        return;
+    }
+
+    let energyChanged = false;
+    let newEnergy = { ...me.dbzEnergy };
+    if (e.target.closest('#dbz-energy-add-btn')) { newEnergy.active++; energyChanged = true; }
+    if (e.target.closest('#dbz-energy-remove-btn')) {
+        if (newEnergy.active > 0) { newEnergy.active--; energyChanged = true; }
+        else if (newEnergy.rested > 0) { newEnergy.rested--; energyChanged = true; }
+    }
+    if (e.target.closest('#dbz-energy-rest-btn')) {
+        if (newEnergy.active > 0) { newEnergy.active--; newEnergy.rested++; energyChanged = true; }
+    }
+    if (e.target.closest('#dbz-energy-reset-btn')) {
+        newEnergy.active += newEnergy.rested; newEnergy.rested = 0; energyChanged = true;
+    }
+    
+    if (energyChanged) {
+        if (appState.isHost) {
+            me.dbzEnergy = newEnergy;
+            broadcastGameState();
+            fullRender();
+        } else {
+            appState.channel.trigger('client-update-dbz-energy', { energy: newEnergy });
+        }
+    }
+});
 // --- INITIALIZATION ---
 const init = async () => {
     // First, determine the view and render the basic UI
@@ -2417,6 +2647,7 @@ const init = async () => {
 
 </body>
 </html>
+
 
 
 
