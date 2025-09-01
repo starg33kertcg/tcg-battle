@@ -238,11 +238,11 @@
                  <div id="select-dbz" class="bg-gray-700 p-4 rounded-lg text-center cursor-pointer border-2 border-transparent hover:border-orange-500 hover:bg-gray-600 transition-colors">
                     <div class="h-24 w-24 mx-auto mb-2 rounded-full flex items-center justify-center" style="background-color: #f97316;">
                     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="50" r="45" fill="#f97316"/>
-<path d="M35 35 L38.5 41 L45.5 41 L40.5 45 L42.5 52 L35 48 L27.5 52 L29.5 45 L24.5 41 L31.5 41 Z" fill="#dc2626"/>
-<path d="M65 35 L68.5 41 L75.5 41 L70.5 45 L72.5 52 L65 48 L57.5 52 L59.5 45 L54.5 41 L61.5 41 Z" fill="#dc2626"/>
-<path d="M35 60 L38.5 66 L45.5 66 L40.5 70 L42.5 77 L35 73 L27.5 77 L29.5 70 L24.5 66 L31.5 66 Z" fill="#dc2626"/>
-<path d="M65 60 L68.5 66 L75.5 66 L70.5 70 L72.5 77 L65 73 L57.5 77 L59.5 70 L54.5 66 L61.5 66 Z" fill="#dc2626"/>
+  <circle cx="50" cy="50" r="45" fill="#FFA400"/>
+  <path d="M36 28 L39.5 34 L46.5 34 L41.5 38 L43.5 45 L36 41 L28.5 45 L30.5 38 L25.5 34 L32.5 34 Z" fill="#FF4500"/>
+  <path d="M64 28 L67.5 34 L74.5 34 L69.5 38 L71.5 45 L64 41 L56.5 45 L58.5 38 L53.5 34 L60.5 34 Z" fill="#FF4500"/>
+  <path d="M36 56 L39.5 62 L46.5 62 L41.5 66 L43.5 73 L36 69 L28.5 73 L30.5 66 L25.5 62 L32.5 62 Z" fill="#FF4500"/>
+  <path d="M64 56 L67.5 62 L74.5 62 L69.5 66 L71.5 73 L64 69 L56.5 73 L58.5 66 L53.5 62 L60.5 62 Z" fill="#FF4500"/>
 </svg>
                     </div>
                 <h3 class="font-bold text-lg">Dragonball Z</h3>
@@ -978,7 +978,7 @@ let PUSHER_CLUSTER = null;
     // Update Life display
     document.getElementById('dbz-life-display').textContent = me.dbzLife;
 
-    // Update Awaken button appearance and disable status
+    // Update Awaken button appearance
     const awakenBtn = document.getElementById('awaken-btn');
     awakenBtn.classList.toggle('bg-yellow-500', me.isAwakened);
     awakenBtn.classList.toggle('hover:bg-yellow-600', me.isAwakened);
@@ -997,11 +997,21 @@ let PUSHER_CLUSTER = null;
         energyTracker.classList.add('hidden');
     }
 
-    // Disable all controls if it's not our turn
+    // --- NEW, MORE SPECIFIC DISABLING LOGIC ---
     const isMyTurn = appState.myId === appState.game.turn;
-    document.getElementById('dbz-controls').querySelectorAll('button').forEach(btn => {
-        btn.disabled = !isMyTurn || appState.game.status !== 'active';
-    });
+    const gameIsActive = appState.game.status === 'active' || appState.game.status === 'overtime';
+
+    // Life buttons are ALWAYS enabled when the game is active
+    document.getElementById('dbz-life-up-btn').disabled = !gameIsActive;
+    document.getElementById('dbz-life-down-btn').disabled = !gameIsActive;
+
+    // Awaken and Energy buttons are only enabled on your turn
+    awakenBtn.disabled = !isMyTurn || !gameIsActive;
+    if (appState.game.dbzEnergyTrackingEnabled) {
+        energyTracker.querySelectorAll('button').forEach(btn => {
+            btn.disabled = !isMyTurn || !gameIsActive;
+        });
+    }
 };
 
     const renderTimerDisplay = () => {
@@ -2648,6 +2658,7 @@ const init = async () => {
 
 </body>
 </html>
+
 
 
 
