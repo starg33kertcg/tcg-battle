@@ -78,13 +78,13 @@
         }
         /* DBZ Awaken Badge */
         .fiery-glow {
-        color: #fef08a; /* Bright yellow text color */
+        color: #fef08a; 
         animation: pulse-fire 1.5s infinite;
         }
         @keyframes pulse-fire {
-            0% { text-shadow: 0 0 5px #fef08a, 0 0 10px #f59e0b, 0 0 15px #d97706; }
-            50% { text-shadow: 0 0 10px #fef08a, 0 0 20px #f59e0b, 0 0 30px #d97706; }
-            100% { text-shadow: 0 0 5px #fef08a, 0 0 10px #f59e0b, 0 0 15px #d97706; }
+            0% { text-shadow: 0 0 5px #f5700b, 0 0 10px #f59e0b, 0 0 15px #d97706; }
+            50% { text-shadow: 0 0 10px #f5700b, 0 0 20px #f59e0b, 0 0 30px #d97706; }
+            100% { text-shadow: 0 0 5px #f5700b, 0 0 10px #f59e0b, 0 0 15px #d97706; }
         }
 
         /* Lorcana Styles */
@@ -982,9 +982,9 @@ let PUSHER_CLUSTER = null;
     const awakenBtn = document.getElementById('awaken-btn');
 if (me.isAwakened) {
     awakenBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-    awakenBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+    awakenBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
 } else {
-    awakenBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+    awakenBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
     awakenBtn.classList.add('bg-red-600', 'hover:bg-red-700');
 }
 
@@ -2661,6 +2661,7 @@ const init = async () => {
 
 </body>
 </html>
+
 
 
 
